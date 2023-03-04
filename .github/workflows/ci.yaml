@@ -97,24 +97,3 @@ jobs:
           verbose: true
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
-
-  publisher_latest:
-    needs: [builder_teamtalk]
-    if: github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v3
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: python-package-distributions
-          path: dist/
-      - name: Make release
-        uses: "marvinpinto/action-automatic-releases@v1.2.1"
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: true
-          title: "Latest Development Version"
-          automatic_release_tag: "latest"
-          files: dist/*

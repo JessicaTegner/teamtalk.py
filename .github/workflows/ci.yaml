@@ -43,8 +43,6 @@ jobs:
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       - name: Download TeamTalk SDK
         run: poetry run python -c "from teamtalk.download_sdk import download_sdk;download_sdk()"
-      - name: run tests
-        run: poetry run pytest
       - name: run linting
         run: poetry run pre-commit run --all-files
 

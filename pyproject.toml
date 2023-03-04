@@ -34,7 +34,6 @@ pywave = "^0.5"
 
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.2"
 pre-commit = "^3.1"
 
 [tool.poetry.group.docs]

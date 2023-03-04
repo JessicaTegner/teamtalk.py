@@ -42,7 +42,7 @@ jobs:
         run: poetry install --with dev
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       - name: Download TeamTalk SDK
-        run: poetry run python -c "from teamtalk.download_sdk import download_sdk;download_sdk()"
+        run: poetry run python -c "import teamtalk"
       - name: run linting
         run: poetry run pre-commit run --all-files
 

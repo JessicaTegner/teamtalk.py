@@ -57,7 +57,7 @@ bot.run()
 You can find the full documentation [here](http://teamtalkpy.readthedocs.io/en/latest)
 
 
-## License
+## Contributing
 
 So you want to contribute to teamtalk.py? Great! There are many ways to contribute to this project, and all contributions are welcome.
 

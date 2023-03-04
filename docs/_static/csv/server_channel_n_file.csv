@@ -1,0 +1,6 @@
+on_channel_new	teamtalk.Channel	Called when a new channel (teamtalk.Channel) is created.
+on_channel_update	teamtalk.Channel	Called when a teamtalk.Channel has been updated.
+on_channel_delete	teamtalk.Channel	Called when a teamtalk.Channel has been deleted from the server.
+on_server_update	teamtalk.Server	Called when a teamtalk.Server has updated its settings.
+on_file_new	teamtalk.RemoteFile	Called when a file has been uploaded to a channel.
+on_file_delete	teamtalk.RemoteFile	Called when a file has been deleted from a channel.

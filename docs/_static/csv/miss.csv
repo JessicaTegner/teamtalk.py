@@ -1,0 +1,2 @@
+on_ready	None	Called when the bot is started and ready to accept events.
+on_error	event_name (str), \*args (Any), \*\*kwargs (Any),Called when another event errors. Has a default implementation

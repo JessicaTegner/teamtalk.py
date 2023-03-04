@@ -1,0 +1,5 @@
+on_user_login	teamtalk.user	Called when a user logs in to a server that the bot is on
+on_user_logout	teamtalk.User	Called when a user logs out from a server that the bot is on
+on_user_update	teamtalk.User	Called when a user gets updated
+on_user_join	teamtalk.User, teamtalk.Channel	Called when a teamtalk.User joins a teamtalk.Channel
+on_user_left	teamtalk.User, teamtalk.Channel	Called when a teamtalk.User leaves a teamtalk.Channel

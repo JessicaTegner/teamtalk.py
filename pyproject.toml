@@ -1,0 +1,67 @@
+[tool.poetry]
+name = "teamtalk-py"
+version = "1.0.0"
+description = "a simple but powerful pythonic library for making bots for the TeamTalk5 Conferencing System"
+authors = ["JessicaTegner <jessica.tegner@outlook.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/JessicaTegner/teamtalk.py/"
+repository = "https://github.com/JessicaTegner/teamtalk.py/"
+documentation = "https://teamtalkpy.readthedocs.io/en/latest/"
+keywords = ["teamtalk", "teamtalk5", "teamtalk sdk", "conferencing"]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: AsyncIO",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Topic :: Internet",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+
+packages = [{include = "teamtalk"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+typing-extensions = "^4.5"
+requests = "^2.28"
+beautifulsoup4 = "^4.11"
+patool = "^1.12"
+pywave = "^0.5"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2"
+pre-commit = "^3.1"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "^6.1"
+sphinxcontrib-trio = "^1.1"
+sphinxcontrib-napoleon = "^0.7"
+sphinx-sitemap = "^2.5.0"
+
+[tool.black]
+line-length = 125
+skip-string-normalization = true
+
+[tool.flake8]
+ignore = ["E203", "E731", "W503", "D401", "DAR402", "DAR103"]
+exclude = ['docs/*', 'tests/*', 'teamtalk/tools/*', '__pycache__', 'teamtalk/implementation/*', 'teamtalk/__init__.py', 'teamtalk/implementation/__init__.py', 'example.py']
+max-line-length = 125
+count = true
+statistics = true
+max-complexity = 20
+
+[tool.poetry.urls]
+"Issue Tracker" = "https://github.com/JessicaTegner/teamtalk.py/issues/"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

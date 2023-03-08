@@ -10,7 +10,7 @@ build:
   apt_packages:
     - p7zip-full
     - libasound2
-    - libssl
+    - libssl-dev
   tools:
     python: "3.11"
   jobs:

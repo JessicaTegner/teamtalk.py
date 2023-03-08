@@ -10,7 +10,6 @@ from ctypes import *
 # if we are on linux we do a little hack for the LD_LIBRARY_PATH
 try:
     if sys.platform.startswith("linux"):
-        print(f"Current path: {os.path.dirname(__file__)}.")
         # get the full path to the implementation/TeamTalk_DLL folder
         libpath = os.path.join(os.path.dirname(__file__), "implementation", "TeamTalk_DLL", "libTeamTalk5.so")
         dll = cdll.LoadLibrary(libpath)

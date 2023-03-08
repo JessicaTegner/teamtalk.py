@@ -9,6 +9,8 @@ build:
   os: ubuntu-22.04
   apt_packages:
     - p7zip-full
+    - libasound2
+    - libssl
   tools:
     python: "3.11"
   jobs:

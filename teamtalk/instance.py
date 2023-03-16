@@ -16,6 +16,7 @@ from .channel import Channel as TeamTalkChannel
 from .enums import TeamTalkServerInfo, UserStatusMode
 from .exceptions import PermissionError
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
+from .audio import AudioBlock, _AcquireUserAudioBlock, _ReleaseUserAudioBlock
 from .message import BroadcastMessage, ChannelMessage, CustomMessage, DirectMessage
 from .permission import Permission
 from .server import Server as TeamTalkServer
@@ -91,6 +92,8 @@ class TeamTalkInstance(sdk.TeamTalk):
             return False
         self.bot.dispatch("my_login", self.server)
         self.logged_in = True
+        self.super.initSoundInputDevice(1978)
+        self.super.initSoundOutputDevice(1978)
         if join_channel_on_login:
             channel_id = self.server_info.join_channel_id
             if channel_id < 1:
@@ -391,13 +394,24 @@ class TeamTalkInstance(sdk.TeamTalk):
         """Processes events from the server. This is automatically called by teamtalk.Bot."""
         msg = self.super.getMessage()
         event = msg.nClientEvent
+        if event == sdk.ClientEvent.CLIENTEVENT_USER_FIRSTVOICESTREAMPACKET:
+            sdk._EnableAudioBlockEventEx(self._tt, msg.user.nUserID, sdk.StreamType.STREAMTYPE_VOICE, None, True)
+            return
         if event != sdk.ClientEvent.CLIENTEVENT_NONE and _getAbsTimeDiff(self.init_time, time.time()) < 1500:
             # done so we don't get random events when logging in
+            print(f"Ignoring event {event}")
             return
         if event == sdk.ClientEvent.CLIENTEVENT_NONE:
             return
         if event == sdk.ClientEvent.CLIENTEVENT_USER_AUDIOBLOCK:
-            self.bot.dispatch("user_audio", self, msg)
+            # this one is a little special
+            user = TeamTalkUser(self, msg.nSource)
+            ab = _AcquireUserAudioBlock(self._tt, msg.nSource, msg.ttType)
+            real_ab = AudioBlock(user, ab)
+            # dispatch
+            self.bot.dispatch("user_audio", real_ab)
+            # release
+            _ReleaseUserAudioBlock(self._tt, ctypes.POINTER(sdk.AudioBlock)(ab))
             return
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_USER_TEXTMSG:
             message = None
@@ -458,6 +472,8 @@ class TeamTalkInstance(sdk.TeamTalk):
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_MYSELF_KICKED:
             self.bot.dispatch("my_kicked_from_channel", TeamTalkChannel(self, msg.nSource))
             return
+        else:
+            _log.warning(f"Unhandled event: {event}")
 
     def _get_channel_info(self, channel_id: int):
         _channel = self.getChannel(channel_id)

@@ -29,7 +29,7 @@ class Channel:
             self._channel = channel
             self.id = channel.nChannelID
             self.channel_path = channel.szName
-        self.server = lambda self: teamtalk.server
+        self.server = self.teamtalk.server
 
     def _refresh(self) -> None:
         self._channel, self.channel_path = self.teamtalk._get_channel_info(self.id)

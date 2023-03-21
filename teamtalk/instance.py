@@ -130,6 +130,8 @@ class TeamTalkInstance(sdk.TeamTalk):
     def has_permission(self, permission: Permission) -> bool:
         """Checks if the bot has a permission.
 
+        If the user is an admin, they have all permissions.
+
         Args:
             permission: The permission to check for.
 
@@ -137,6 +139,9 @@ class TeamTalkInstance(sdk.TeamTalk):
             bool: True if the bot has the permission, False otherwise.
         """
         user = self.super.getMyUserAccount()
+        # first check if they are an admin
+        if user.uUserType == sdk.UserType.USERTYPE_ADMIN:
+            return True
         user_rights = user.uUserRights
         return (user_rights & permission) == permission
 

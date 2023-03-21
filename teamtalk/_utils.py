@@ -28,6 +28,20 @@ def _waitForCmdSuccess(ttclient, cmdid, timeout):
     return False, sdk.TTMessage()
 
 
+def _waitForCmd(ttclient, cmdid, timeout):
+    end = timestamp() + timeout
+    while True:
+        msg = ttclient.getMessage()
+        if msg.nClientEvent == sdk.ClientEvent.CLIENTEVENT_CMD_ERROR:
+            if msg.nSource == cmdid:
+                return False, msg.clienterrormsg
+        elif msg.nClientEvent == sdk.ClientEvent.CLIENTEVENT_CMD_SUCCESS:
+            if msg.nSource == cmdid:
+                return True, msg
+        if timestamp() >= end:
+            return False, sdk.TTMessage()
+
+
 def _getAbsTimeDiff(t1, t2):
     t1 = int(round(t1 * 1000))
     t2 = int(round(t2 * 1000))

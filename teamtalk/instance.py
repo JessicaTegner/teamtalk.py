@@ -5,15 +5,16 @@ It is used to send and receive messages, join and leave channels, and perform ot
 In addition, it's also here that events are dispatched.
 """
 
+import asyncio
 import os
 import logging
 import time
 import ctypes
 from typing import List, Union
 
-from ._utils import _getAbsTimeDiff, _waitForEvent, _do_after
+from ._utils import _getAbsTimeDiff, _waitForEvent, _waitForCmd, _do_after
 from .channel import Channel as TeamTalkChannel
-from .enums import TeamTalkServerInfo, UserStatusMode
+from .enums import TeamTalkServerInfo, UserStatusMode, UserType
 from .exceptions import PermissionError
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
 from .message import BroadcastMessage, ChannelMessage, CustomMessage, DirectMessage
@@ -21,6 +22,7 @@ from .permission import Permission
 from .server import Server as TeamTalkServer
 from .tt_file import RemoteFile
 from .user import User as TeamTalkUser
+from .user_account import UserAccount as TeamTalkUserAccount
 
 
 _log = logging.getLogger(__name__)
@@ -49,6 +51,7 @@ class TeamTalkInstance(sdk.TeamTalk):
         self.connected = False
         self.logged_in = False
         self.init_time = time.time()
+        self.user_accounts = []
 
     def connect(self) -> bool:
         """Connects to the server. This doesn't return until the connection is successful or fails.
@@ -218,6 +221,89 @@ class TeamTalkInstance(sdk.TeamTalk):
             TeamTalkUser: The user.
         """
         return TeamTalkUser(self, user_id)
+
+    # user account stuff
+    def create_user_account(self, username: str, password: str, usertype: UserType) -> TeamTalkUserAccount:  # noqa
+        """Creates a user account on the server.
+
+        Args:
+            username: The username of the user account.
+            password: The password of the user account.
+            usertype: The type of the user account.
+
+        Returns:
+            TeamTalkUserAccount: The user account.
+
+        Raises:
+            ValueError: If the username or password is invalid.
+            PermissionError: If the bot does not have permission to create a user account or if the bot is not logged in.
+        """
+        account = sdk.UserAccount()
+        account.szUsername = username
+        account.szPassword = password
+        account.uUserType = usertype
+        result = sdk._DoNewUserAccount(self._tt, account)
+        if result == -1:
+            raise ValueError("Username or password is invalid")
+        cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+        if not cmd_result:
+            err_nr = cmd_err.nErrorNo
+            if err_nr == sdk.ClientError.CMDERR_INVALID_USERNAME:
+                raise ValueError("Username is invalid")
+            if err_nr == sdk.ClientError.CMDERR_NOT_AUTHORIZED:
+                raise PermissionError("The bot does not have permission to create a user account")
+            if err_nr == sdk.ClientError.CMDERR_NOT_LOGGEDIN:
+                raise PermissionError("The bot is not logged in")
+        return True
+
+    def delete_user_account(self, username: str) -> bool:
+        """Deletes a user account.
+
+        Args:
+            username: The username of the user account to delete.
+
+        Returns:
+            bool: True if the user account was deleted, False otherwise.
+
+        Raises:
+            ValueError: If the username is empty or the user account does not exist.
+            PermissionError: If the user does not have permission to delete a user account.
+        """
+        if not username:
+            raise ValueError("Username is empty")
+        username = sdk.ttstr(username)
+        result = sdk._DoDeleteUserAccount(self._tt, username)
+        if result == -1:
+            raise ValueError("User account does not exist")
+        cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+        if not cmd_result:
+            err_nr = cmd_err.nErrorNo
+            if err_nr == sdk.ClientError.CMDERR_NOT_AUTHORIZED:
+                raise PermissionError("The bot does not have permission to delete a user account")
+            if err_nr == sdk.ClientError.CMDERR_NOT_LOGGEDIN:
+                raise PermissionError("The bot is not logged in")
+            if err_nr == sdk.ClientError.CMDERR_ACCOUNT_NOT_FOUND:
+                raise ValueError("User account does not exist")
+        return True
+
+    async def list_user_accounts(self) -> List[TeamTalkUserAccount]:
+        """Lists all user accounts on the server.
+
+        Returns:
+            A list of all user accounts.
+
+        Raises:
+            PermissionError: If the bot is not an admin.
+            ValueError: If an unknown error occurred.
+        """
+        if not self.is_admin():
+            raise PermissionError("The bot is not an admin")
+        self.user_accounts = []
+        result = sdk._DoListUserAccounts(self._tt, 0, 1000000)
+        if result == -1:
+            raise ValueError("Unknown error")
+        await asyncio.sleep(1)
+        return self.user_accounts
 
     # file stuff
     def upload_file(self, channel_id: int, filepath: str) -> None:
@@ -463,6 +549,19 @@ class TeamTalkInstance(sdk.TeamTalk):
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_MYSELF_KICKED:
             self.bot.dispatch("my_kicked_from_channel", TeamTalkChannel(self, msg.nSource))
             return
+        if event == sdk.ClientEvent.CLIENTEVENT_CMD_USERACCOUNT:
+            account = TeamTalkUserAccount(self, msg.useraccount)
+            self.user_accounts.append(account)
+            return
+        else:
+            # if we haven't handled the event, log it
+            # except if it's CLIENTEVENT_CMD_PROCESSING or CLIENTEVENT_CMD_ERROR or CLIENTEVENT_CMD_SUCCESS
+            if event not in (
+                sdk.ClientEvent.CLIENTEVENT_CMD_PROCESSING,
+                sdk.ClientEvent.CLIENTEVENT_CMD_ERROR,
+                sdk.ClientEvent.CLIENTEVENT_CMD_SUCCESS,
+            ):
+                _log.warning(f"Unhandled event: {event}")
 
     def _get_channel_info(self, channel_id: int):
         _channel = self.getChannel(channel_id)

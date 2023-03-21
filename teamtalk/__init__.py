@@ -26,7 +26,7 @@ except:
 
 from .bot import TeamTalkBot
 from .channel import Channel
-from .enums import TeamTalkServerInfo, UserStatusMode
+from .enums import TeamTalkServerInfo, UserStatusMode, UserType
 from .instance import TeamTalkInstance
 from .message import BroadcastMessage, ChannelMessage, CustomMessage, DirectMessage
 from .permission import Permission

@@ -24,8 +24,10 @@ Added
 
 - Added the possibility to get and update TeamTalk Server properties.
 - Added the possibility to create, delete, get and list user accounts.
+- Added the possibility to create and delete channels.
 - Added a teamtalk.UserAccount and teamtalk.BannedUserAccount type.
 - Added a method that can list banned users.
+- Added methods to get a channel from a path and a path from a channel.
 - Added methods to make or remove a user as a channel operator.
 
 Changed / Fixed
@@ -34,6 +36,7 @@ Changed / Fixed
 - Changed the way we check for permissions. If the bot is admin, it will have all
     permissions. If it is not, it will only have the permissions that are set
     for the bot's user account.
+- Fixed the teamtalk.Instance.get_channel function so it now returns correctly.
 - Fixed kicking and banning users. We now handle the case where the bot is not
     admin.
 - Fixed kicking and banning users. We now handle more errors and raise when appropriate.

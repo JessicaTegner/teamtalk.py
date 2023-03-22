@@ -125,3 +125,13 @@ class Channel:
             return self.__dict__[name]
         else:
             return _get_tt_obj_attribute(self._channel, name)
+
+
+class _ChannelTypeMeta(type):
+    def __getattr__(cls, name: str) -> sdk.UserRight:
+        name = f"CHANNEL_{name}"
+        return getattr(sdk.ChannelType, name, None)
+
+
+class ChannelType(metaclass=_ChannelTypeMeta):
+    """A class representing user permissions in TeamTalk."""

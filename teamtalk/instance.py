@@ -14,6 +14,7 @@ from typing import List, Union
 
 from ._utils import _getAbsTimeDiff, _waitForEvent, _waitForCmd, _do_after
 from .channel import Channel as TeamTalkChannel
+from .channel import ChannelType
 from .enums import TeamTalkServerInfo, UserStatusMode, UserType
 from .exceptions import PermissionError
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
@@ -48,7 +49,7 @@ class TeamTalkInstance(sdk.TeamTalk):
         # set the server info
         self.server_info = server_info
         self.server = TeamTalkServer(self, server_info)
-        self.channel = lambda self: self.get_channel(self.super.getMyChannelID())
+        self.channel = lambda: self.get_channel(self.super.getMyChannelID())
         self.connected = False
         self.logged_in = False
         self.init_time = time.time()
@@ -211,7 +212,132 @@ class TeamTalkInstance(sdk.TeamTalk):
         Returns:
             TeamTalkChannel: The channel.
         """
-        return self.bot, TeamTalkChannel(self, channel_id)
+        return TeamTalkChannel(self, channel_id)
+
+    def get_path_from_channel(self, channel: Union[TeamTalkChannel, int]) -> str:
+        """Gets the path of a channel.
+
+        Args:
+            channel: The channel to get the path of.
+
+        Returns:
+            str: The path of the channel.
+
+        Raises:
+            TypeError: If the channel is not of type teamtalk.Channel or int.
+            ValueError: If the channel is not found.
+        """
+        if isinstance(channel, TeamTalkChannel):
+            channel = channel.id
+        # variable to hold the path
+        path = sdk.TTCHAR()
+        result = sdk._GetChannelPath(self.super, channel, path)
+        if not result:
+            raise ValueError("Channel not found")
+        return path.value
+
+    def get_channel_from_path(self, path: str) -> TeamTalkChannel:
+        """Gets a channel by its path.
+
+        Args:
+            path: The path of the channel to get.
+
+        Returns:
+            TeamTalkChannel: The channel.
+
+        Raises:
+            ValueError: If the channel is not found.
+        """
+        result = sdk._GetChannelIDFromPath(self.super, sdk.ttstr(path))
+        if result == 0:
+            raise ValueError("Channel not found")
+        return TeamTalkChannel(self, result)
+
+    # create a channel. Take in a name, parent channel. Optionally take in a topic, password and channel type
+    def create_channel(
+        self,
+        name: str,
+        parent_channel: Union[TeamTalkChannel, int],
+        topic: str = "",
+        password: str = "",
+        channel_type: ChannelType = ChannelType.CHANNEL_DEFAULT,
+    ) -> bool:
+        """Creates a channel.
+
+        Args:
+            name: The name of the channel to create.
+            parent_channel: The parent channel of the channel.
+            topic: The topic of the channel.
+            password: The password of the channel. Leave empty for no password.
+            channel_type: The type of the channel. Defaults to CHANNEL_DEFAULT.
+
+        Raises:
+            PermissionError: If the bot does not have permission to create channels.
+            ValueError: If the channel could not be created.
+
+        Returns:
+            bool: True if the channel was created, False otherwise.
+        """
+        if not self.has_permission(Permission.MODIFY_CHANNELS):
+            raise PermissionError("The bot does not have permission to create channels")
+        if isinstance(parent_channel, TeamTalkChannel):
+            parent_channel = parent_channel.id
+        new_channel = sdk.Channel()
+        new_channel.nParentID = parent_channel
+        new_channel.szName = sdk.ttstr(name)
+        new_channel.szTopic = sdk.ttstr(topic)
+        new_channel.szPassword = sdk.ttstr(password)
+        new_channel.bPassword = password != ""
+        new_channel.uChannelType = channel_type
+        result = sdk._DoMakeChannel(self._tt, new_channel)
+        if result == -1:
+            raise ValueError("Channel could not be created")
+        cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+        if not cmd_result:
+            err_nr = cmd_err.nErrorNo
+            if err_nr == sdk.ClientError.CMDERR_NOT_LOGGEDIN:
+                raise PermissionError("The bot is not logged in")
+            if err_nr == sdk.ClientError.CMDERR_NOT_AUTHORIZED:
+                raise PermissionError("The bot does not have permission to create channels")
+            if err_nr == sdk.ClientError.CMDERR_CHANNEL_ALREADY_EXISTS:
+                raise ValueError("Channel already exists")
+            if err_nr == sdk.ClientError.CMDERR_CHANNEL_NOT_FOUND:
+                raise ValueError("Combined channel path is too long. Try using a shorter channel name")
+            if err_nr == sdk.ClientError.CMDERR_INCORRECT_CHANNEL_PASSWORD:
+                raise ValueError("Channel password too long")
+        return True
+
+    def delete_channel(self, channel: Union[TeamTalkChannel, int]):
+        """Deletes a channel.
+
+        Args:
+            channel: The channel to delete.
+
+        Raises:
+            TypeError: If the channel is not of type teamtalk.Channel or int.
+            PermissionError: If the bot doesn't have the permission to delete the channel.
+            ValueError: If the channel is not found.
+
+        Returns:
+            bool: True if the channel was deleted.
+        """
+        if not self.has_permission(Permission.MODIFY_CHANNELS):
+            raise PermissionError("The bot does not have permission to delete channels")
+        if isinstance(channel, TeamTalkChannel):
+            channel = channel.id
+        result = sdk._DoRemoveChannel(self._tt, channel)
+        if result == -1:
+            raise ValueError("Channel could not be deleted")
+        cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+        if not cmd_result:
+            err_nr = cmd_err.nErrorNo
+            if err_nr == sdk.ClientError.CMDERR_NOT_LOGGEDIN:
+                raise PermissionError("The bot is not logged in")
+            if err_nr == sdk.ClientError.CMDERR_NOT_AUTHORIZED:
+                raise PermissionError("The bot does not have permission to delete channels")
+            if err_nr == sdk.ClientError.CMDERR_CHANNEL_NOT_FOUND:
+                raise ValueError("Channel not found.")
+        return True
 
     def make_channel_operator(
         self, user: Union[TeamTalkUser, int], channel: Union[TeamTalkUser, int], operator_password: str = ""

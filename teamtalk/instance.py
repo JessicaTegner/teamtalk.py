@@ -415,11 +415,30 @@ class TeamTalkInstance(sdk.TeamTalk):
         Raises:
             PermissionError: If the bot does not have permission to kick users.
             TypeError: If the user or channel is not a subclass of User or Channel.
+            ValueError: If the user or channel is not found.
         """
-        if not self.has_permission(Permission.KICK_USERS):
-            raise PermissionError("You do not have permission to kick users")
-        _log.debug(f"Kicking user {user} from channel {channel}")
-        self._do_cmd(user, channel, "_DoKickUser")
+        # first check if we are kicking from channel or server
+        if channel == 0:  # server
+            if not self.has_permission(Permission.KICK_USERS):
+                raise PermissionError("You do not have permission to kick users")
+            _log.debug(f"Kicking user {user} from channel {channel}")
+            self._do_cmd(user, channel, "_DoKickUser")
+        else:  # channel
+            if not self.has_permission(Permission.KICK_USERS_FROM_CHANNEL) or sdk._IsChannelOperator(
+                self._tt, self.super.getMyUserID(), channel
+            ):
+                raise PermissionError("You do not have permission to kick users from channels")
+            result = self._do_cmd(user, channel, "_DoKickUser")
+        if result == -1:
+            raise ValueError("Uknown error")
+            cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+            if not cmd_result:
+                err_nr = cmd_err.nErrorNo
+                if err_nr == sdk.ClientError.CMDERR_USER_NOT_FOUND:
+                    raise ValueError("User not found")
+                if err_nr == sdk.ClientError.CMDERR_CHANNEL_NOT_FOUND:
+                    raise ValueError("Channel not found")
+            return cmd_result
 
     def ban_user(self, user: Union[TeamTalkUser, int], channel: Union[TeamTalkChannel, int]) -> None:
         """Bans a user from a channel or the server.
@@ -431,11 +450,20 @@ class TeamTalkInstance(sdk.TeamTalk):
         Raises:
             PermissionError: If the bot does not have permission to ban users.
             TypeError: If the user or channel is not a subclass of User or Channel.
+            ValueError: If the user is not found.
         """
         if not self.has_permission(Permission.BAN_USERS):
             raise PermissionError("You do not have permission to ban users")
         _log.debug(f"Banning user {user} from channel {channel}")
-        self._do_cmd(user, channel, "_DoBanUser")
+        result = self._do_cmd(user, channel, "_DoBanUser")
+        if result == -1:
+            raise ValueError("Uknown error")
+            cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+            if not cmd_result:
+                err_nr = cmd_err.nErrorNo
+                if err_nr == sdk.ClientError.CMDERR_USER_NOT_FOUND:
+                    raise ValueError("User not found")
+            return cmd_result
 
     def unban_user(self, ip: str, channel: Union[TeamTalkChannel, int]) -> None:
         """Unbans a user from the server.
@@ -585,4 +613,4 @@ class TeamTalkInstance(sdk.TeamTalk):
         if isinstance(channel, TeamTalkChannel):
             channel_id = channel.id
         sdk_func = getattr(sdk, func)
-        sdk_func(self._tt, user_id, channel_id)
+        return sdk_func(self._tt, user_id, channel_id)

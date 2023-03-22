@@ -213,6 +213,90 @@ class TeamTalkInstance(sdk.TeamTalk):
         """
         return self.bot, TeamTalkChannel(self, channel_id)
 
+    def make_channel_operator(
+        self, user: Union[TeamTalkUser, int], channel: Union[TeamTalkUser, int], operator_password: str = ""
+    ) -> bool:
+        """Makes a user the channel operator.
+
+        Args:
+            user: The user to make the channel operator.
+            channel: The channel to make the user the channel operator in.
+            operator_password: The operator password of the channel.
+
+        Raises:
+            TypeError: If the user or channel is not of type teamtalk.User or int.
+            PermissionError: If the bot doesn't have the permission to make a user the channel operator.
+            ValueError: If the user or channel is not found.
+
+        Returns:
+            bool: True if the user was made the channel operator, False otherwise.
+        """
+        if isinstance(user, int):
+            user = self.get_user(user)
+        if isinstance(channel, int):
+            channel = self.get_channel(channel)
+        result = sdk.DoChannelOpEx(self.super, user.id, channel.id, sdk.ttstr(operator_password), True)
+        if result == -1:
+            raise PermissionError("The bot does not have the permission to make a user the channel operator")
+            return False
+        cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+        if not cmd_result:
+            err_nr = cmd_err.nErrorNo
+            if err_nr == sdk.ClientError.CMDERR_NOT_LOGGEDIN:
+                raise PermissionError("The bot is not logged in")
+            if err_nr == sdk.ClientError.CMDERR_NOT_AUTHORIZED:
+                raise PermissionError("The bot does not have permission to make a user the channel operator")
+            if err_nr == sdk.ClientError.CMDERR_CHANNEL_NOT_FOUND:
+                raise ValueError("The channel does not exist")
+            if err_nr == sdk.ClientError.CMDERR_USER_NOT_FOUND:
+                raise ValueError("The user does not exist")
+            if err_nr == sdk.ClientError.CMDERR_INCORRECT_OP_PASSWORD:
+                raise ValueError("The operator password is incorrect")
+            return False
+        return True
+
+    def remove_channel_operator(
+        self, user: Union[TeamTalkUser, int], channel: Union[TeamTalkUser, int], operator_password: str = ""
+    ) -> bool:
+        """Removes a user as the channel operator.
+
+        Args:
+            user: The user to make the channel operator.
+            channel: The channel to make the user the channel operator in.
+            operator_password: The operator password of the channel.
+
+        Raises:
+            TypeError: If the user or channel is not of type teamtalk.User or int.
+            PermissionError: If the bot doesn't have the permission to make a user the channel operator.
+            ValueError: If the channel or user does not exist.
+
+        Returns:
+            bool: True if the user was removed as the channel operator, False otherwise.
+        """
+        if isinstance(user, int):
+            user = self.get_user(user)
+        if isinstance(channel, int):
+            channel = self.get_channel(channel)
+        result = sdk.DoChannelOpEx(self.super, user.id, channel.id, sdk.ttstr(operator_password), False)
+        if result == -1:
+            raise PermissionError("The bot does not have the permission to make a user the channel operator")
+            return False
+        cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+        if not cmd_result:
+            err_nr = cmd_err.nErrorNo
+            if err_nr == sdk.ClientError.CMDERR_NOT_LOGGEDIN:
+                raise PermissionError("The bot is not logged in")
+            if err_nr == sdk.ClientError.CMDERR_NOT_AUTHORIZED:
+                raise PermissionError("The bot does not have permission to make a user the channel operator")
+            if err_nr == sdk.ClientError.CMDERR_CHANNEL_NOT_FOUND:
+                raise ValueError("The channel does not exist")
+            if err_nr == sdk.ClientError.CMDERR_USER_NOT_FOUND:
+                raise ValueError("The user does not exist")
+            if err_nr == sdk.ClientError.CMDERR_INCORRECT_OP_PASSWORD:
+                raise ValueError("The operator password is incorrect")
+            return False
+        return True
+
     def get_user(self, user_id: int) -> TeamTalkUser:
         """Gets a user by its ID.
 

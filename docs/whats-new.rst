@@ -26,6 +26,7 @@ Added
 - Added the possibility to create, delete, get and list user accounts.
 - Added a teamtalk.UserAccount and teamtalk.BannedUserAccount type.
 - Added a method that can list banned users.
+- Added methods to make or remove a user as a channel operator.
 
 Changed / Fixed
 ~~~~~~~~~~~~~~~

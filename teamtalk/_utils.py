@@ -28,6 +28,20 @@ def _waitForCmdSuccess(ttclient, cmdid, timeout):
     return False, sdk.TTMessage()
 
 
+def _waitForCmd(ttclient, cmdid, timeout):
+    end = timestamp() + timeout
+    while True:
+        msg = ttclient.getMessage()
+        if msg.nClientEvent == sdk.ClientEvent.CLIENTEVENT_CMD_ERROR:
+            if msg.nSource == cmdid:
+                return False, msg.clienterrormsg
+        elif msg.nClientEvent == sdk.ClientEvent.CLIENTEVENT_CMD_SUCCESS:
+            if msg.nSource == cmdid:
+                return True, msg
+        if timestamp() >= end:
+            return False, sdk.TTMessage()
+
+
 def _getAbsTimeDiff(t1, t2):
     t1 = int(round(t1 * 1000))
     t2 = int(round(t2 * 1000))
@@ -70,6 +84,49 @@ def _get_tt_obj_attribute(obj, attr):
         pass
     # if we are still here we failed to get the attribute
     raise AttributeError(f"Could not find attribute {name} in {obj}")
+
+
+def _set_tt_obj_attribute(obj, attr, value):
+    name = ""
+    for name_part in attr.split("_"):
+        # if the name_part is "id" or "ID" then we want to keep it as "ID"
+        if name_part.lower() == "id":
+            name += "ID"
+        else:
+            # otherwise we want to capitalize the first letter
+            name += name_part.capitalize()
+    # first try to prefix with "n" and then set obj.name to value
+    try:
+        setattr(obj, f"n{name}", value)
+        return
+    except AttributeError:
+        pass
+    # if that fails, try to prefix name with "sz" and then set obj.name to value
+    try:
+        setattr(obj, f"sz{name}", value)
+        return
+    except AttributeError:
+        pass
+    # if that fails, try to prefix name with "b" and then set obj.name to value
+    try:
+        setattr(obj, f"b{name}", value)
+        return
+    except AttributeError:
+        pass
+    # if that fails, try to prefix name with "u" and then set obj.name to value
+    try:
+        setattr(obj, f"u{name}", value)
+        return
+    except AttributeError:
+        pass
+    # if that fails, try to lowercase the first letter name and then set obj.name to value
+    try:
+        setattr(obj, f"{name[0].lower()}{name[1:]}", value)
+        return
+    except AttributeError:
+        pass
+    # if we are still here we failed to get the attribute
+    raise AttributeError(f"Could not set attribute {name} in {obj}")
 
 
 def _do_after(delay, func):

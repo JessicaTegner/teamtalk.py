@@ -43,6 +43,13 @@ Channel
     :members:
 
 
+UserAccount
+--------
+
+.. automodule:: teamtalk.user_account
+    :members:
+
+
 User
 --------
 

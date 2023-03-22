@@ -2,7 +2,8 @@
 
 from typing import List, Union
 
-from ._utils import _get_tt_obj_attribute
+from ._utils import _get_tt_obj_attribute, _set_tt_obj_attribute, _waitForCmd
+from .permission import Permission
 from .exceptions import PermissionError
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
 from .tt_file import RemoteFile
@@ -30,6 +31,43 @@ class Channel:
             self.id = channel.nChannelID
             self.channel_path = channel.szName
         self.server = self.teamtalk.server
+
+    def update(self) -> bool:
+        """Update the channel information.
+
+        Example:
+            >>> channel = teamtalk.get_channel(1)
+            >>> channel.name = "New Channel Name"
+            >>> channel.update()
+
+        Raises:
+            PermissionError: If the bot does not have permission to update the channel.
+            ValueError: If the channel could not be updated.
+
+        Returns:
+            bool: True if the channel was updated successfully.
+        """
+        if not self.teamtalk.has_permission(Permission.MODIFY_CHANNELS) or not sdk._IsChannelOperator(
+            self._tt, self.super.getMyUserID(), self.id
+        ):
+            raise PermissionError("the bot does not have permission to update the channel.")
+        result = sdk._DoUpdateChannel(self.teamtalk._tt, self._channel)
+        if result == -1:
+            raise ValueError("Channel could not be updated")
+        cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+        if not cmd_result:
+            err_nr = cmd_err.nErrorNo
+            if err_nr == sdk.ClientError.CMDERR_NOT_LOGGEDIN:
+                raise PermissionError("The bot is not logged in")
+            if err_nr == sdk.ClientError.CMDERR_NOT_AUTHORIZED:
+                raise PermissionError("The bot does not have permission to update channels")
+            if err_nr == sdk.ClientError.CMDERR_CHANNEL_NOT_FOUND:
+                raise ValueError("Channel could not be found")
+            if err_nr == sdk.ClientError.CMDERR_CHANNEL_ALREADY_EXISTS:
+                raise ValueError("Channel already exists")
+            if err_nr == sdk.ClientError.CMDERR_CHANNEL_HAS_USERS:
+                raise ValueError("Channel has users and can therefore not be updated")
+        return True
 
     def _refresh(self) -> None:
         self._channel, self.channel_path = self.teamtalk._get_channel_info(self.id)
@@ -125,3 +163,36 @@ class Channel:
             return self.__dict__[name]
         else:
             return _get_tt_obj_attribute(self._channel, name)
+
+    def __setattr__(self, name: str, value):
+        """Try to set the specified attribute.
+
+        Args:
+            name: The name of the attribute.
+            value: The value to set the attribute to.
+
+        Raises:
+            AttributeError: If the specified attribute is not found. This is the default behavior. # noqa
+        """
+        if name in dir(self):
+            self.__dict__[name] = value
+        else:
+            # id cannot be change.
+            if name == "id":
+                raise AttributeError("Cannot change the id of a channel")
+            if name in ["teamtalk", "id", "server", "channel_path", "_channel"]:
+                self.__dict__[name] = value
+            else:
+                _get_tt_obj_attribute(self.properties, name)
+                # if we have gotten here, we can set the attribute
+                _set_tt_obj_attribute(self._channel, name, value)
+
+
+class _ChannelTypeMeta(type):
+    def __getattr__(cls, name: str) -> sdk.UserRight:
+        name = f"CHANNEL_{name}"
+        return getattr(sdk.ChannelType, name, None)
+
+
+class ChannelType(metaclass=_ChannelTypeMeta):
+    """A class representing user permissions in TeamTalk."""

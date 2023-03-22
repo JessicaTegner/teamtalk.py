@@ -112,3 +112,10 @@ class UserStatusMode:
     ONLINE = 0
     AWAY = 1
     QUESTION = 2
+
+
+class UserType:
+    """The type of a user account."""
+
+    DEFAULT = 0x1
+    ADMIN = 0x02

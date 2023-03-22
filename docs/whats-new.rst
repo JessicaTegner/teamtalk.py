@@ -24,7 +24,7 @@ Added
 
 - Added the possibility to get and update TeamTalk Server properties.
 - Added the possibility to create, delete, get and list user accounts.
-- Added the possibility to create and delete channels.
+- Added the possibility to create, update and delete channels.
 - Added a teamtalk.UserAccount and teamtalk.BannedUserAccount type.
 - Added a method that can list banned users.
 - Added methods to get a channel from a path and a path from a channel.

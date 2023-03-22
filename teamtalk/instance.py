@@ -636,7 +636,7 @@ class TeamTalkInstance(sdk.TeamTalk):
             _log.debug(f"Kicking user {user} from channel {channel}")
             self._do_cmd(user, channel, "_DoKickUser")
         else:  # channel
-            if not self.has_permission(Permission.KICK_USERS_FROM_CHANNEL) or sdk._IsChannelOperator(
+            if not self.has_permission(Permission.KICK_USERS_FROM_CHANNEL) or not sdk._IsChannelOperator(
                 self._tt, self.super.getMyUserID(), channel
             ):
                 raise PermissionError("You do not have permission to kick users from channels")

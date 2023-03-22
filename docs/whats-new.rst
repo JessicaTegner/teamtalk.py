@@ -16,6 +16,32 @@ This document holds a human-readable list of changes between releases.
 
     For more information on SemVer, please visit http://semver.org/.
 
+v1.0.0 - unreleased
+-----------------------------
+
+Added
+~~~~~
+
+- Added the possibility to get and update TeamTalk Server properties.
+- Added the possibility to create, delete, get and list user accounts.
+- Added a teamtalk.UserAccount and teamtalk.BannedUserAccount type.
+- Added a method that can list banned users.
+
+Changed / Fixed
+~~~~~~~~~~~~~~~
+
+- Changed the way we check for permissions. If the bot is admin, it will have all
+    permissions. If it is not, it will only have the permissions that are set
+    for the bot's user account.
+- Fixed kicking and banning users. We now handle the case where the bot is not
+    admin.
+- Fixed kicking and banning users. We now handle more errors and raise when appropriate.
+- Fixed a bug where it was impossible to get the server from the channel class
+    when using it as part of a chain.
+- Fixed a bug where it was impossible to get the server from the user class
+    when using it as part of a chain.
+- Fixed a bug where the sdk downloader would not work on linux, due to missing a user agent.
+
 
 
 :version:`1.0.0` - 2023-03-01

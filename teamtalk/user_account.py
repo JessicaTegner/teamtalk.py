@@ -37,3 +37,11 @@ class UserAccount:
             return self.__dict__[name]
         else:
             return _get_tt_obj_attribute(self._account, name)
+
+
+# make a subclass of UserAccount for a banned user
+class BannedUserAccount(UserAccount):
+    """Represents a banned user account on a TeamTalk server. This class is not meant to be instantiated directly. Instead, use the TeamTalkBot.list_banned_users() method to get a list of BannedUserAccount objects. # noqa"""
+
+    # shouldn't do anything extra
+    pass

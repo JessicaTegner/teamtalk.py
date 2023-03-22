@@ -23,6 +23,7 @@ from .server import Server as TeamTalkServer
 from .tt_file import RemoteFile
 from .user import User as TeamTalkUser
 from .user_account import UserAccount as TeamTalkUserAccount
+from .user_account import BannedUserAccount as TeamTalkBannedUserAccount
 
 
 _log = logging.getLogger(__name__)
@@ -488,11 +489,11 @@ class TeamTalkInstance(sdk.TeamTalk):
         _log.debug(f"Unbanning user {ip}")
         sdk._DoUnBanUser(self._tt, sdk.ttstr(ip), channel_id)
 
-    async def list_banned_users(self):
+    async def list_banned_users(self) -> List[TeamTalkBannedUserAccount]:
         """Lists all banned users.
 
         Returns:
-            List[BannedUser]: A list of banned users.
+            List[BannedUserAccount]: A list of banned users.
 
         Raises:
             PermissionError: If the bot is not an admin.
@@ -501,7 +502,7 @@ class TeamTalkInstance(sdk.TeamTalk):
         if not self.is_admin():
             raise PermissionError("The bot is not an admin")
         self.banned_users = []
-        result = sdk._DoListBans(self._tt, 0, 1000000)
+        result = sdk._DoListBans(self._tt, 0, 0, 1000000)
         if result == -1:
             raise ValueError("Unknown error")
         await asyncio.sleep(1)
@@ -602,8 +603,11 @@ class TeamTalkInstance(sdk.TeamTalk):
             self.user_accounts.append(account)
             return
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_BANNEDUSER:
-            user = msg.useraccount
-            self.banned_users.append(user)
+            # cast our msg.useraccount to a banned user
+            banned_user_struct = sdk.BannedUser()
+            ctypes.memmove(ctypes.byref(banned_user_struct), ctypes.byref(msg.useraccount), ctypes.sizeof(sdk.BannedUser))
+            banned_user = TeamTalkBannedUserAccount(self, banned_user_struct)
+            self.banned_users.append(banned_user)
             return
         else:
             # if we haven't handled the event, log it

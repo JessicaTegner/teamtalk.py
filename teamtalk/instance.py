@@ -52,6 +52,7 @@ class TeamTalkInstance(sdk.TeamTalk):
         self.logged_in = False
         self.init_time = time.time()
         self.user_accounts = []
+        self.banned_users = []
 
     def connect(self) -> bool:
         """Connects to the server. This doesn't return until the connection is successful or fails.
@@ -487,6 +488,25 @@ class TeamTalkInstance(sdk.TeamTalk):
         _log.debug(f"Unbanning user {ip}")
         sdk._DoUnBanUser(self._tt, sdk.ttstr(ip), channel_id)
 
+    async def list_banned_users(self):
+        """Lists all banned users.
+
+        Returns:
+            List[BannedUser]: A list of banned users.
+
+        Raises:
+            PermissionError: If the bot is not an admin.
+            ValueError: If an unknown error occurs.
+        """
+        if not self.is_admin():
+            raise PermissionError("The bot is not an admin")
+        self.banned_users = []
+        result = sdk._DoListBans(self._tt, 0, 1000000)
+        if result == -1:
+            raise ValueError("Unknown error")
+        await asyncio.sleep(1)
+        return self.banned_users
+
     def _send_message(self, message: sdk.TextMessage, **kwargs):
         """Sends a message.
 
@@ -580,6 +600,10 @@ class TeamTalkInstance(sdk.TeamTalk):
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_USERACCOUNT:
             account = TeamTalkUserAccount(self, msg.useraccount)
             self.user_accounts.append(account)
+            return
+        if event == sdk.ClientEvent.CLIENTEVENT_CMD_BANNEDUSER:
+            user = msg.useraccount
+            self.banned_users.append(user)
             return
         else:
             # if we haven't handled the event, log it

@@ -86,6 +86,49 @@ def _get_tt_obj_attribute(obj, attr):
     raise AttributeError(f"Could not find attribute {name} in {obj}")
 
 
+def _set_tt_obj_attribute(obj, attr, value):
+    name = ""
+    for name_part in attr.split("_"):
+        # if the name_part is "id" or "ID" then we want to keep it as "ID"
+        if name_part.lower() == "id":
+            name += "ID"
+        else:
+            # otherwise we want to capitalize the first letter
+            name += name_part.capitalize()
+    # first try to prefix with "n" and then set obj.name to value
+    try:
+        setattr(obj, f"n{name}", value)
+        return
+    except AttributeError:
+        pass
+    # if that fails, try to prefix name with "sz" and then set obj.name to value
+    try:
+        setattr(obj, f"sz{name}", value)
+        return
+    except AttributeError:
+        pass
+    # if that fails, try to prefix name with "b" and then set obj.name to value
+    try:
+        setattr(obj, f"b{name}", value)
+        return
+    except AttributeError:
+        pass
+    # if that fails, try to prefix name with "u" and then set obj.name to value
+    try:
+        setattr(obj, f"u{name}", value)
+        return
+    except AttributeError:
+        pass
+    # if that fails, try to lowercase the first letter name and then set obj.name to value
+    try:
+        setattr(obj, f"{name[0].lower()}{name[1:]}", value)
+        return
+    except AttributeError:
+        pass
+    # if we are still here we failed to get the attribute
+    raise AttributeError(f"Could not set attribute {name} in {obj}")
+
+
 def _do_after(delay, func):
     def _do_after_thread(delay, func):
         initial_time = time.time()

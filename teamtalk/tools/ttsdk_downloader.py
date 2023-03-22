@@ -13,7 +13,7 @@ import requests
 
 from . import downloader
 
-url = "http://bearware.dk/teamtalksdk"
+url = "https://bearware.dk/teamtalksdk"
 
 cd = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -41,7 +41,12 @@ def get_url_suffix_from_platform() -> str:
 
 
 def download() -> None:
-    r = requests.get(url)
+    headers = {
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36',
+    }
+    r = requests.get(url, headers=headers)
+    # check status code
+    r.raise_for_status()
     page = bs4.BeautifulSoup(r.text, features="html.parser")
     # The last tested version series is v5.12x
     versions = page.find_all("li")

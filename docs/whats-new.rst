@@ -16,8 +16,8 @@ This document holds a human-readable list of changes between releases.
 
     For more information on SemVer, please visit http://semver.org/.
 
-v1.1.0 - unreleased
------------------------------
+:version:`1.1.0` - 2023-03-24
+---------------------------------
 
 Added
 ~~~~~

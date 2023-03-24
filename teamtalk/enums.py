@@ -110,12 +110,20 @@ class UserStatusMode:
     """The status mode of a user. This is used in the teamtalk.TeamTalkInstance.change_status call."""
 
     ONLINE = 0
+    """The user is online."""
+
     AWAY = 1
+    """The user is away."""
+
     QUESTION = 2
+    """The user has a question"""
 
 
 class UserType:
     """The type of a user account."""
 
     DEFAULT = 0x1
+    """The default user type. This only has the permissions set, and no other permissions."""
+
     ADMIN = 0x02
+    """The admin user type. This has all permissions."""

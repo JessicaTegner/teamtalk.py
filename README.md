@@ -60,9 +60,7 @@ You can find the full documentation [here](http://teamtalkpy.readthedocs.io/en/l
 ## Contributing
 
 So you want to contribute to teamtalk.py? Great! There are many ways to contribute to this project, and all contributions are welcome.
-
 If you have found a bug, have a feature request or want to help improve documentation please [open an issue](https://https://github.com/jessicaTegner/issues/new)_
-
 You can also donate to the projects maintainer (JessicaTegner) to help support the development of teamtalk.py:
 
 

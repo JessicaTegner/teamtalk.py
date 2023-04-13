@@ -95,7 +95,7 @@ class ChannelMessage(Message):
         super().__init__(teamtalk_instance, msg)
         self.to_id = msg.nChannelID
         self.channel_id = msg.nChannelID
-        _, self.channel = self.teamtalk_instance.get_channel(self.channel_id)
+        self.channel = self.teamtalk_instance.get_channel(self.channel_id)
 
 
 class DirectMessage(Message):

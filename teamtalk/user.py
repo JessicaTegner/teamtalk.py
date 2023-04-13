@@ -38,7 +38,7 @@ class User:
         else:
             raise TypeError(f"user must be either a string or an int. Argument has type: {str(type(user))}.")
         self.id = self.user_id
-        _, self.channel = self.teamtalk_instance.get_channel(self._user.nChannelID)
+        self.channel = self.teamtalk_instance.get_channel(self._user.nChannelID)
         self.server = self.channel.server
 
     def send_message(self, content: str, **kwargs) -> int:

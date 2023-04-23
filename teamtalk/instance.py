@@ -19,6 +19,7 @@ from .enums import TeamTalkServerInfo, UserStatusMode, UserType
 from .exceptions import PermissionError
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
 from .message import BroadcastMessage, ChannelMessage, CustomMessage, DirectMessage
+from .subscription import Subscription
 from .permission import Permission
 from .server import Server as TeamTalkServer
 from .tt_file import RemoteFile
@@ -177,6 +178,38 @@ class TeamTalkInstance(sdk.TeamTalk):
         if isinstance(user, TeamTalkUser):
             return user.user_type == sdk.UserType.USERTYPE_ADMIN
         raise TypeError("User must be of type teamtalk.User or int")
+
+    # Subscription stuff
+    def subscribe(self, user: TeamTalkUser, subscription: Subscription):
+        """Subscribes to a subscription.
+
+        Args:
+            user: The user to subscribe to.
+            subscription: The subscription to subscribe to.
+        """
+        sdk._DoSubscribe(user.id, subscription)
+
+    def unsubscribe(self, user: TeamTalkUser, subscription: Subscription):
+        """Unsubscribes from a subscription.
+
+        Args:
+            user: The user to unsubscribe from.
+            subscription: The subscription to unsubscribe from.
+        """
+        sdk._DoUnsubscribe(self._tt, user.id, subscription)
+
+    def is_subscribed(self, subscription: Subscription) -> bool:
+        """Checks if the bot is subscribed to a subscription.
+
+        Args:
+            subscription: The subscription to check.
+
+        Returns:
+            bool: True if the bot is subscribed to the subscription, False otherwise.
+        """
+        current_subscriptions = self._get_my_user().local_subscriptions
+        # it's a bitfield so we can just check if the subscription is in the bitfield
+        return (current_subscriptions & subscription) == subscription
 
     def join_root_channel(self):
         """Joins the root channel."""
@@ -836,6 +869,9 @@ class TeamTalkInstance(sdk.TeamTalk):
 
     def _get_my_permissions(self):
         return self.super._GetMyUserRights()
+
+    def _get_my_user(self):
+        return self.get_user(self.super.getMyUserID())
 
     def _do_cmd(self, user: Union[TeamTalkUser, int], channel: Union[TeamTalkChannel, int], func) -> None:
         if not self.has_permission(Permission.KICK_USERS):

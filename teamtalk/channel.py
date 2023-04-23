@@ -147,6 +147,26 @@ class Channel:
         """
         self.teamtalk.ban_user(user, self)
 
+    def subscribe(self, subscription) -> None:
+        """Subscribe to a subscription for all users in this channel.
+
+        Args:
+            subscription: The subscription to subscribe to.
+        """
+        users = self.get_users()
+        for user in users:
+            user.subscribe(subscription)
+
+    def unsubscribe(self, subscription) -> None:
+        """Unsubscribe from a subscription for all users in this channel.
+
+        Args:
+            subscription: The subscription to unsubscribe from.
+        """
+        users = self.get_users()
+        for user in users:
+            user.unsubscribe(subscription)
+
     def __getattr__(self, name: str):
         """Try to get the attribute from the channel object.
 

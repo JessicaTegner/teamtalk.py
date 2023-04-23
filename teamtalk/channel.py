@@ -178,8 +178,6 @@ class Channel:
             self.__dict__[name] = value
         else:
             # id cannot be change.
-            if name == "id":
-                raise AttributeError("Cannot change the id of a channel")
             if name in ["teamtalk", "id", "server", "channel_path", "_channel"]:
                 self.__dict__[name] = value
             else:

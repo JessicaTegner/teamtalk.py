@@ -248,7 +248,7 @@ class TeamTalkInstance(sdk.TeamTalk):
         Raises:
             ValueError: If the channel is not found.
         """
-        result = sdk._GetChannelIDFromPath(self.super, sdk.ttstr(path))
+        result = sdk._GetChannelIDFromPath(self._tt, sdk.ttstr(path))
         if result == 0:
             raise ValueError("Channel not found")
         return TeamTalkChannel(self, result)

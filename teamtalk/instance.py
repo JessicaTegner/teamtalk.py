@@ -187,7 +187,7 @@ class TeamTalkInstance(sdk.TeamTalk):
             user: The user to subscribe to.
             subscription: The subscription to subscribe to.
         """
-        sdk._DoSubscribe(user.id, subscription)
+        sdk._DoSubscribe(self._tt, user.id, subscription)
 
     def unsubscribe(self, user: TeamTalkUser, subscription: Subscription):
         """Unsubscribes from a subscription.

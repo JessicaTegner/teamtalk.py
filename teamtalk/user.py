@@ -94,6 +94,33 @@ class User:
             channel_id = self.channel.id
         self.teamtalk_instance.ban_user(self, channel_id)
 
+    def subscribe(self, subscription) -> None:
+        """Subscribes to the specified subscription.
+
+        Args:
+            subscription: The subscription to subscribe to.
+        """
+        self.teamtalk_instance.subscribe(self, subscription)
+
+    def unsubscribe(self, subscription) -> None:
+        """Unsubscribes from the specified subscription.
+
+        Args:
+            subscription: The subscription to unsubscribe from.
+        """
+        self.teamtalk_instance.unsubscribe(self, subscription)
+
+    def is_subscribed(self, subscription) -> bool:
+        """Checks if this user is subscribed to the specified subscription.
+
+        Args:
+            subscription: The subscription to check.
+
+        Returns:
+            True if the bot is subscribed to the specified subscription from this user, False otherwise.
+        """
+        return self.teamtalk_instance.is_subscribed(self, subscription)
+
     def __getattr__(self, name: str):
         """Try to get the specified attribute from self._user if it is not found in self.
 

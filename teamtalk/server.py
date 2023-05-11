@@ -155,6 +155,28 @@ class Server:
         """
         self.teamtalk_instance.unban_user(user, 0)
 
+    def subscribe(self, subscription):
+        """Subscribes to the specified subscription for all users on the server.
+
+        Args:
+            subscription: The subscription to subscribe to.
+
+        """
+        users = self.get_users()
+        for user in users:
+            user.subscribe(subscription)
+
+    def unsubscribe(self, subscription):
+        """Unsubscribes to the specified subscription for all users on the server.
+
+        Args:
+            subscription: The subscription to unsubscribe to.
+
+        """
+        users = self.get_users()
+        for user in users:
+            user.unsubscribe(subscription)
+
     def get_properties(self) -> "ServerProperties":
         """Gets the properties of the server.
 

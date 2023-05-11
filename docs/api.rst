@@ -85,6 +85,13 @@ Permission
     :members:
 
 
+Subscriptions
+-------------
+
+.. automodule:: teamtalk.subscription
+    :members:
+
+
 Exceptions
 ------------
 

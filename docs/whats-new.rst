@@ -16,6 +16,17 @@ This document holds a human-readable list of changes between releases.
 
     For more information on SemVer, please visit http://semver.org/.
 
+
+1.2.0 - Unreleased
+---------------------------------
+
+Added
+~~~~~
+
+- Added support for subscriptions. You can now subscribe to events per user and get notified when they happen. You can also unsubscribe from events.
+
+
+
 :version:`1.1.0` - 2023-03-24
 ---------------------------------
 

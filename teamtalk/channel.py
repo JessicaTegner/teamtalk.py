@@ -211,6 +211,9 @@ class _ChannelTypeMeta(type):
         name = f"CHANNEL_{name}"
         return getattr(sdk.ChannelType, name, None)
 
+    def __dir__(cls) -> list[str]:
+        return [attr[8:] for attr in dir(sdk.ChannelType) if attr.startswith("CHANNEL_")]
+
 
 class ChannelType(metaclass=_ChannelTypeMeta):
-    """A class representing user permissions in TeamTalk."""
+    """A class representing Channel types in TeamTalk."""

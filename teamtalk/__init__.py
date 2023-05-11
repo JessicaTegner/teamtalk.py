@@ -31,3 +31,4 @@ from .instance import TeamTalkInstance
 from .message import BroadcastMessage, ChannelMessage, CustomMessage, DirectMessage
 from .permission import Permission
 from .streamer import Streamer
+from .subscription import Subscription

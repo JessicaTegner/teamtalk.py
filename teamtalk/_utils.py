@@ -129,6 +129,38 @@ def _set_tt_obj_attribute(obj, attr, value):
     raise AttributeError(f"Could not set attribute {name} in {obj}")
 
 
+# now convert the _get_tt_obj_attribute names to python names that can be used in set_tt_obj_attribute
+def _tt_attr_to_py_attr(attr):
+    name = ""
+    # if the attr is id, keep it
+    if attr.lower() == "id":
+        name = "id"
+    else:
+        # we want to discard all letters before the first capital letter, keeping the rest
+        new_attr = ""
+        for x in range(len(attr)):
+            if attr[x].isupper():
+                new_attr = attr[x:]
+                break
+        # if everything is ubber, just lowercase everything and return
+        if new_attr.isupper():
+            return new_attr.lower()
+        # now we want to lowercase the first letter
+        name = new_attr[0].lower()
+        # then replace every other capital letter with an underscore and the lowercase version of that letter
+        for x in range(1, len(new_attr)):
+            if new_attr[x].isupper():
+                # if the next letter is also uppercase, we want to just lowercase this one
+                # IF the next letter is lowercase, we want to lowercase this letter and put an underscore after it
+                if x + 1 < len(new_attr) and new_attr[x + 1].isupper():
+                    name += new_attr[x].lower()
+                else:
+                    name += f"_{new_attr[x].lower()}"
+            else:
+                name += new_attr[x]
+    return name
+
+
 def _do_after(delay, func):
     def _do_after_thread(delay, func):
         initial_time = time.time()

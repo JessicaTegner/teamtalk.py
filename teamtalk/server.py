@@ -3,7 +3,7 @@
 import ctypes
 from typing import Union
 
-from ._utils import _get_tt_obj_attribute, _set_tt_obj_attribute
+from ._utils import _get_tt_obj_attribute, _set_tt_obj_attribute, _tt_attr_to_py_attr
 from .permission import Permission
 from .channel import Channel as TeamTalkChannel
 from .exceptions import PermissionError
@@ -219,7 +219,21 @@ class Server:
             return _get_tt_obj_attribute(self._user, name)
 
 
-class ServerProperties(object):
+class _ServerPropertiesMeta(type):
+    def __dir__(self) -> list[str]:
+        """Gets the list of attributes on properties.
+
+        Returns:
+            A list of attributes on properties.
+        """
+        attrs = []
+        for attr in dir(sdk.ServerProperties):
+            if not attr.startswith("_"):
+                attrs.append(_tt_attr_to_py_attr(attr))
+        return attrs
+
+
+class ServerProperties(metaclass=_ServerPropertiesMeta):
     """Represents the properties of a server.
 
     This class should not be instantiated directly. Instead, use the teamtalk.Server.get_properties() method. # noqa

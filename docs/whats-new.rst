@@ -24,6 +24,7 @@ Added
 ~~~~~
 
 - Added support for subscriptions. You can now subscribe to events per user and get notified when they happen. You can also unsubscribe from events.
+- Added more expressive dir methods for Permissions, Channel Types and Server Properties. Now you can call dir(teamtalk.Permissions) and get a list of all permissions. Same for Channel Types and Server Properties.
 
 
 

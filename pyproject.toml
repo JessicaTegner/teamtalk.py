@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "teamtalk-py"
-version = "1.0.0"
+version = "1.1.1"
 description = "a simple but powerful pythonic library for making bots for the TeamTalk5 Conferencing System"
 authors = ["JessicaTegner <jessica.tegner@outlook.com>"]
 license = "MIT"

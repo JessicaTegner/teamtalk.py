@@ -43,6 +43,13 @@ Channel
     :members:
 
 
+UserAccount
+--------
+
+.. automodule:: teamtalk.user_account
+    :members:
+
+
 User
 --------
 
@@ -75,6 +82,13 @@ Permission
 -------------
 
 .. automodule:: teamtalk.permission
+    :members:
+
+
+Subscriptions
+-------------
+
+.. automodule:: teamtalk.subscription
     :members:
 
 

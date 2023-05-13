@@ -38,7 +38,7 @@ class User:
         else:
             raise TypeError(f"user must be either a string or an int. Argument has type: {str(type(user))}.")
         self.id = self.user_id
-        _, self.channel = self.teamtalk_instance.get_channel(self._user.nChannelID)
+        self.channel = self.teamtalk_instance.get_channel(self._user.nChannelID)
         self.server = self.channel.server
 
     def send_message(self, content: str, **kwargs) -> int:
@@ -93,6 +93,33 @@ class User:
         if not from_server:
             channel_id = self.channel.id
         self.teamtalk_instance.ban_user(self, channel_id)
+
+    def subscribe(self, subscription) -> None:
+        """Subscribes to the specified subscription.
+
+        Args:
+            subscription: The subscription to subscribe to.
+        """
+        self.teamtalk_instance.subscribe(self, subscription)
+
+    def unsubscribe(self, subscription) -> None:
+        """Unsubscribes from the specified subscription.
+
+        Args:
+            subscription: The subscription to unsubscribe from.
+        """
+        self.teamtalk_instance.unsubscribe(self, subscription)
+
+    def is_subscribed(self, subscription) -> bool:
+        """Checks if this user is subscribed to the specified subscription.
+
+        Args:
+            subscription: The subscription to check.
+
+        Returns:
+            True if the bot is subscribed to the specified subscription from this user, False otherwise.
+        """
+        return self.teamtalk_instance.is_subscribed(self, subscription)
 
     def __getattr__(self, name: str):
         """Try to get the specified attribute from self._user if it is not found in self.

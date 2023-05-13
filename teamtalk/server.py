@@ -1,8 +1,10 @@
 """Provides the Server class for interacting with a TeamTalk5 server."""
 
+import ctypes
 from typing import Union
 
-from ._utils import _get_tt_obj_attribute
+from ._utils import _get_tt_obj_attribute, _set_tt_obj_attribute, _tt_attr_to_py_attr
+from .permission import Permission
 from .channel import Channel as TeamTalkChannel
 from .exceptions import PermissionError
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
@@ -153,6 +155,52 @@ class Server:
         """
         self.teamtalk_instance.unban_user(user, 0)
 
+    def subscribe(self, subscription):
+        """Subscribes to the specified subscription for all users on the server.
+
+        Args:
+            subscription: The subscription to subscribe to.
+
+        """
+        users = self.get_users()
+        for user in users:
+            user.subscribe(subscription)
+
+    def unsubscribe(self, subscription):
+        """Unsubscribes to the specified subscription for all users on the server.
+
+        Args:
+            subscription: The subscription to unsubscribe to.
+
+        """
+        users = self.get_users()
+        for user in users:
+            user.unsubscribe(subscription)
+
+    def get_properties(self) -> "ServerProperties":
+        """Gets the properties of the server.
+
+        Returns:
+            A teamtalk.ServerProperties instance representing the properties of the server.
+        """
+        props = self.teamtalk_instance.super.getServerProperties()
+        return ServerProperties(self.teamtalk_instance, props)
+
+    def update_properties(self, properties: "ServerProperties"):
+        """Updates the properties of the server.
+
+        Args:
+            properties: The updated properties. See teamtalk.ServerProperties for more information.
+
+        Raises:
+            PermissionError: If the bot does not have the permission to update the properties.
+        """
+        if not self.teamtalk_instance.has_permission(Permission.UPDATE_SERVERPROPERTIES):
+            raise PermissionError("The bot does not have permission to update the server properties")
+        # get the underlying properties object
+        properties = properties.properties
+        sdk._DoUpdateServer(self.teamtalk_instance._tt, ctypes.byref(properties))
+
     def __getattr__(self, name: str):
         """Try to get the specified attribute on server.
 
@@ -169,3 +217,83 @@ class Server:
             return self.__dict__[name]
         else:
             return _get_tt_obj_attribute(self._user, name)
+
+
+class _ServerPropertiesMeta(type):
+    def __dir__(self) -> list[str]:
+        """Gets the list of attributes on properties.
+
+        Returns:
+            A list of attributes on properties.
+        """
+        attrs = []
+        for attr in dir(sdk.ServerProperties):
+            if not attr.startswith("_"):
+                attrs.append(_tt_attr_to_py_attr(attr))
+        return attrs
+
+
+class ServerProperties(metaclass=_ServerPropertiesMeta):
+    """Represents the properties of a server.
+
+    This class should not be instantiated directly. Instead, use the teamtalk.Server.get_properties() method. # noqa
+
+    Example:
+        >>> server = teamtalk server
+        >>> properties = server.get_properties()
+        >>> properties.max_users
+        1000
+        >>> properties.max_users = 500
+        >>> server.update_properties(properties)
+        >>> properties = server.get_properties()
+        >>> properties.max_users
+        500
+    """
+
+    def __init__(self, teamtalk_instance, properties):
+        """Initializes a new instance of the ServerProperties class.
+
+        Args:
+            teamtalk_instance: The teamtalk.TeamTalk instance.
+            properties: The underlying properties object.
+        """
+        self.teamtalk_instance = teamtalk_instance
+        self.properties = properties
+
+    def __getattr__(self, name: str):
+        """Try to get the specified attribute on server.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The value of the specified attribute.
+
+        Raises:
+            AttributeError: If the specified attribute is not found. This is the default behavior. # noqa
+        """
+        if name in dir(self):
+            return self.__dict__[name]
+        else:
+            return _get_tt_obj_attribute(self.properties, name)
+
+    def __setattr__(self, name: str, value):
+        """Try to set the specified attribute on properties.
+
+        Args:
+            name: The name of the attribute.
+            value: The value to set the attribute to.
+
+            Raises:
+                AttributeError: If the specified attribute is not found.
+        """
+        if name in dir(self):
+            self.__dict__[name] = value
+        else:
+            # if name is either teamtalk_instance or properties, just set it on self
+            if name in ["teamtalk_instance", "properties"]:
+                self.__dict__[name] = value
+            else:
+                _get_tt_obj_attribute(self.properties, name)
+                # if we have gotten here, we can set the attribute
+                _set_tt_obj_attribute(self.properties, name, value)

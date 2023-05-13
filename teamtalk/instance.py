@@ -5,23 +5,28 @@ It is used to send and receive messages, join and leave channels, and perform ot
 In addition, it's also here that events are dispatched.
 """
 
+import asyncio
 import os
 import logging
 import time
 import ctypes
 from typing import List, Union
 
-from ._utils import _getAbsTimeDiff, _waitForEvent, _do_after
+from ._utils import _getAbsTimeDiff, _waitForEvent, _waitForCmd, _do_after
 from .channel import Channel as TeamTalkChannel
-from .enums import TeamTalkServerInfo, UserStatusMode
+from .channel import ChannelType
+from .enums import TeamTalkServerInfo, UserStatusMode, UserType
 from .exceptions import PermissionError
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
 from .audio import AudioBlock, _AcquireUserAudioBlock, _ReleaseUserAudioBlock
 from .message import BroadcastMessage, ChannelMessage, CustomMessage, DirectMessage
+from .subscription import Subscription
 from .permission import Permission
 from .server import Server as TeamTalkServer
 from .tt_file import RemoteFile
 from .user import User as TeamTalkUser
+from .user_account import UserAccount as TeamTalkUserAccount
+from .user_account import BannedUserAccount as TeamTalkBannedUserAccount
 
 
 _log = logging.getLogger(__name__)
@@ -46,10 +51,12 @@ class TeamTalkInstance(sdk.TeamTalk):
         # set the server info
         self.server_info = server_info
         self.server = TeamTalkServer(self, server_info)
-        self.channel = lambda self: self.get_channel(self.super.getMyChannelID())
+        self.channel = lambda: self.get_channel(self.super.getMyChannelID())
         self.connected = False
         self.logged_in = False
         self.init_time = time.time()
+        self.user_accounts = []
+        self.banned_users = []
 
     def connect(self) -> bool:
         """Connects to the server. This doesn't return until the connection is successful or fails.
@@ -133,6 +140,8 @@ class TeamTalkInstance(sdk.TeamTalk):
     def has_permission(self, permission: Permission) -> bool:
         """Checks if the bot has a permission.
 
+        If the user is an admin, they have all permissions.
+
         Args:
             permission: The permission to check for.
 
@@ -140,6 +149,9 @@ class TeamTalkInstance(sdk.TeamTalk):
             bool: True if the bot has the permission, False otherwise.
         """
         user = self.super.getMyUserAccount()
+        # first check if they are an admin
+        if user.uUserType == sdk.UserType.USERTYPE_ADMIN:
+            return True
         user_rights = user.uUserRights
         return (user_rights & permission) == permission
 
@@ -169,6 +181,38 @@ class TeamTalkInstance(sdk.TeamTalk):
         if isinstance(user, TeamTalkUser):
             return user.user_type == sdk.UserType.USERTYPE_ADMIN
         raise TypeError("User must be of type teamtalk.User or int")
+
+    # Subscription stuff
+    def subscribe(self, user: TeamTalkUser, subscription: Subscription):
+        """Subscribes to a subscription.
+
+        Args:
+            user: The user to subscribe to.
+            subscription: The subscription to subscribe to.
+        """
+        sdk._DoSubscribe(self._tt, user.id, subscription)
+
+    def unsubscribe(self, user: TeamTalkUser, subscription: Subscription):
+        """Unsubscribes from a subscription.
+
+        Args:
+            user: The user to unsubscribe from.
+            subscription: The subscription to unsubscribe from.
+        """
+        sdk._DoUnsubscribe(self._tt, user.id, subscription)
+
+    def is_subscribed(self, subscription: Subscription) -> bool:
+        """Checks if the bot is subscribed to a subscription.
+
+        Args:
+            subscription: The subscription to check.
+
+        Returns:
+            bool: True if the bot is subscribed to the subscription, False otherwise.
+        """
+        current_subscriptions = self._get_my_user().local_subscriptions
+        # it's a bitfield so we can just check if the subscription is in the bitfield
+        return (current_subscriptions & subscription) == subscription
 
     def join_root_channel(self):
         """Joins the root channel."""
@@ -204,7 +248,216 @@ class TeamTalkInstance(sdk.TeamTalk):
         Returns:
             TeamTalkChannel: The channel.
         """
-        return self.bot, TeamTalkChannel(self, channel_id)
+        return TeamTalkChannel(self, channel_id)
+
+    def get_path_from_channel(self, channel: Union[TeamTalkChannel, int]) -> str:
+        """Gets the path of a channel.
+
+        Args:
+            channel: The channel to get the path of.
+
+        Returns:
+            str: The path of the channel.
+
+        Raises:
+            TypeError: If the channel is not of type teamtalk.Channel or int.
+            ValueError: If the channel is not found.
+        """
+        if isinstance(channel, TeamTalkChannel):
+            channel = channel.id
+        # variable to hold the path
+        path = sdk.TTCHAR()
+        result = sdk._GetChannelPath(self.super, channel, path)
+        if not result:
+            raise ValueError("Channel not found")
+        return path.value
+
+    def get_channel_from_path(self, path: str) -> TeamTalkChannel:
+        """Gets a channel by its path.
+
+        Args:
+            path: The path of the channel to get.
+
+        Returns:
+            TeamTalkChannel: The channel.
+
+        Raises:
+            ValueError: If the channel is not found.
+        """
+        result = sdk._GetChannelIDFromPath(self._tt, sdk.ttstr(path))
+        if result == 0:
+            raise ValueError("Channel not found")
+        return TeamTalkChannel(self, result)
+
+    # create a channel. Take in a name, parent channel. Optionally take in a topic, password and channel type
+    def create_channel(
+        self,
+        name: str,
+        parent_channel: Union[TeamTalkChannel, int],
+        topic: str = "",
+        password: str = "",
+        channel_type: ChannelType = ChannelType.CHANNEL_DEFAULT,
+    ) -> bool:
+        """Creates a channel.
+
+        Args:
+            name: The name of the channel to create.
+            parent_channel: The parent channel of the channel.
+            topic: The topic of the channel.
+            password: The password of the channel. Leave empty for no password.
+            channel_type: The type of the channel. Defaults to CHANNEL_DEFAULT.
+
+        Raises:
+            PermissionError: If the bot does not have permission to create channels.
+            ValueError: If the channel could not be created.
+
+        Returns:
+            bool: True if the channel was created, False otherwise.
+        """
+        if not self.has_permission(Permission.MODIFY_CHANNELS):
+            raise PermissionError("The bot does not have permission to create channels")
+        if isinstance(parent_channel, TeamTalkChannel):
+            parent_channel = parent_channel.id
+        new_channel = sdk.Channel()
+        new_channel.nParentID = parent_channel
+        new_channel.szName = sdk.ttstr(name)
+        new_channel.szTopic = sdk.ttstr(topic)
+        new_channel.szPassword = sdk.ttstr(password)
+        new_channel.bPassword = password != ""
+        new_channel.uChannelType = channel_type
+        result = sdk._DoMakeChannel(self._tt, new_channel)
+        if result == -1:
+            raise ValueError("Channel could not be created")
+        cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+        if not cmd_result:
+            err_nr = cmd_err.nErrorNo
+            if err_nr == sdk.ClientError.CMDERR_NOT_LOGGEDIN:
+                raise PermissionError("The bot is not logged in")
+            if err_nr == sdk.ClientError.CMDERR_NOT_AUTHORIZED:
+                raise PermissionError("The bot does not have permission to create channels")
+            if err_nr == sdk.ClientError.CMDERR_CHANNEL_ALREADY_EXISTS:
+                raise ValueError("Channel already exists")
+            if err_nr == sdk.ClientError.CMDERR_CHANNEL_NOT_FOUND:
+                raise ValueError("Combined channel path is too long. Try using a shorter channel name")
+            if err_nr == sdk.ClientError.CMDERR_INCORRECT_CHANNEL_PASSWORD:
+                raise ValueError("Channel password too long")
+        return True
+
+    def delete_channel(self, channel: Union[TeamTalkChannel, int]):
+        """Deletes a channel.
+
+        Args:
+            channel: The channel to delete.
+
+        Raises:
+            TypeError: If the channel is not of type teamtalk.Channel or int.
+            PermissionError: If the bot doesn't have the permission to delete the channel.
+            ValueError: If the channel is not found.
+
+        Returns:
+            bool: True if the channel was deleted.
+        """
+        if not self.has_permission(Permission.MODIFY_CHANNELS):
+            raise PermissionError("The bot does not have permission to delete channels")
+        if isinstance(channel, TeamTalkChannel):
+            channel = channel.id
+        result = sdk._DoRemoveChannel(self._tt, channel)
+        if result == -1:
+            raise ValueError("Channel could not be deleted")
+        cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+        if not cmd_result:
+            err_nr = cmd_err.nErrorNo
+            if err_nr == sdk.ClientError.CMDERR_NOT_LOGGEDIN:
+                raise PermissionError("The bot is not logged in")
+            if err_nr == sdk.ClientError.CMDERR_NOT_AUTHORIZED:
+                raise PermissionError("The bot does not have permission to delete channels")
+            if err_nr == sdk.ClientError.CMDERR_CHANNEL_NOT_FOUND:
+                raise ValueError("Channel not found.")
+        return True
+
+    def make_channel_operator(
+        self, user: Union[TeamTalkUser, int], channel: Union[TeamTalkUser, int], operator_password: str = ""
+    ) -> bool:
+        """Makes a user the channel operator.
+
+        Args:
+            user: The user to make the channel operator.
+            channel: The channel to make the user the channel operator in.
+            operator_password: The operator password of the channel.
+
+        Raises:
+            TypeError: If the user or channel is not of type teamtalk.User or int.
+            PermissionError: If the bot doesn't have the permission to make a user the channel operator.
+            ValueError: If the user or channel is not found.
+
+        Returns:
+            bool: True if the user was made the channel operator, False otherwise.
+        """
+        if isinstance(user, int):
+            user = self.get_user(user)
+        if isinstance(channel, int):
+            channel = self.get_channel(channel)
+        result = sdk.DoChannelOpEx(self.super, user.id, channel.id, sdk.ttstr(operator_password), True)
+        if result == -1:
+            raise PermissionError("The bot does not have the permission to make a user the channel operator")
+            return False
+        cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+        if not cmd_result:
+            err_nr = cmd_err.nErrorNo
+            if err_nr == sdk.ClientError.CMDERR_NOT_LOGGEDIN:
+                raise PermissionError("The bot is not logged in")
+            if err_nr == sdk.ClientError.CMDERR_NOT_AUTHORIZED:
+                raise PermissionError("The bot does not have permission to make a user the channel operator")
+            if err_nr == sdk.ClientError.CMDERR_CHANNEL_NOT_FOUND:
+                raise ValueError("The channel does not exist")
+            if err_nr == sdk.ClientError.CMDERR_USER_NOT_FOUND:
+                raise ValueError("The user does not exist")
+            if err_nr == sdk.ClientError.CMDERR_INCORRECT_OP_PASSWORD:
+                raise ValueError("The operator password is incorrect")
+            return False
+        return True
+
+    def remove_channel_operator(
+        self, user: Union[TeamTalkUser, int], channel: Union[TeamTalkUser, int], operator_password: str = ""
+    ) -> bool:
+        """Removes a user as the channel operator.
+
+        Args:
+            user: The user to make the channel operator.
+            channel: The channel to make the user the channel operator in.
+            operator_password: The operator password of the channel.
+
+        Raises:
+            TypeError: If the user or channel is not of type teamtalk.User or int.
+            PermissionError: If the bot doesn't have the permission to make a user the channel operator.
+            ValueError: If the channel or user does not exist.
+
+        Returns:
+            bool: True if the user was removed as the channel operator, False otherwise.
+        """
+        if isinstance(user, int):
+            user = self.get_user(user)
+        if isinstance(channel, int):
+            channel = self.get_channel(channel)
+        result = sdk.DoChannelOpEx(self.super, user.id, channel.id, sdk.ttstr(operator_password), False)
+        if result == -1:
+            raise PermissionError("The bot does not have the permission to make a user the channel operator")
+            return False
+        cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+        if not cmd_result:
+            err_nr = cmd_err.nErrorNo
+            if err_nr == sdk.ClientError.CMDERR_NOT_LOGGEDIN:
+                raise PermissionError("The bot is not logged in")
+            if err_nr == sdk.ClientError.CMDERR_NOT_AUTHORIZED:
+                raise PermissionError("The bot does not have permission to make a user the channel operator")
+            if err_nr == sdk.ClientError.CMDERR_CHANNEL_NOT_FOUND:
+                raise ValueError("The channel does not exist")
+            if err_nr == sdk.ClientError.CMDERR_USER_NOT_FOUND:
+                raise ValueError("The user does not exist")
+            if err_nr == sdk.ClientError.CMDERR_INCORRECT_OP_PASSWORD:
+                raise ValueError("The operator password is incorrect")
+            return False
+        return True
 
     def get_user(self, user_id: int) -> TeamTalkUser:
         """Gets a user by its ID.
@@ -216,6 +469,89 @@ class TeamTalkInstance(sdk.TeamTalk):
             TeamTalkUser: The user.
         """
         return TeamTalkUser(self, user_id)
+
+    # user account stuff
+    def create_user_account(self, username: str, password: str, usertype: UserType) -> TeamTalkUserAccount:  # noqa
+        """Creates a user account on the server.
+
+        Args:
+            username: The username of the user account.
+            password: The password of the user account.
+            usertype: The type of the user account.
+
+        Returns:
+            TeamTalkUserAccount: The user account.
+
+        Raises:
+            ValueError: If the username or password is invalid.
+            PermissionError: If the bot does not have permission to create a user account or if the bot is not logged in.
+        """
+        account = sdk.UserAccount()
+        account.szUsername = username
+        account.szPassword = password
+        account.uUserType = usertype
+        result = sdk._DoNewUserAccount(self._tt, account)
+        if result == -1:
+            raise ValueError("Username or password is invalid")
+        cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+        if not cmd_result:
+            err_nr = cmd_err.nErrorNo
+            if err_nr == sdk.ClientError.CMDERR_INVALID_USERNAME:
+                raise ValueError("Username is invalid")
+            if err_nr == sdk.ClientError.CMDERR_NOT_AUTHORIZED:
+                raise PermissionError("The bot does not have permission to create a user account")
+            if err_nr == sdk.ClientError.CMDERR_NOT_LOGGEDIN:
+                raise PermissionError("The bot is not logged in")
+        return True
+
+    def delete_user_account(self, username: str) -> bool:
+        """Deletes a user account.
+
+        Args:
+            username: The username of the user account to delete.
+
+        Returns:
+            bool: True if the user account was deleted, False otherwise.
+
+        Raises:
+            ValueError: If the username is empty or the user account does not exist.
+            PermissionError: If the user does not have permission to delete a user account.
+        """
+        if not username:
+            raise ValueError("Username is empty")
+        username = sdk.ttstr(username)
+        result = sdk._DoDeleteUserAccount(self._tt, username)
+        if result == -1:
+            raise ValueError("User account does not exist")
+        cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+        if not cmd_result:
+            err_nr = cmd_err.nErrorNo
+            if err_nr == sdk.ClientError.CMDERR_NOT_AUTHORIZED:
+                raise PermissionError("The bot does not have permission to delete a user account")
+            if err_nr == sdk.ClientError.CMDERR_NOT_LOGGEDIN:
+                raise PermissionError("The bot is not logged in")
+            if err_nr == sdk.ClientError.CMDERR_ACCOUNT_NOT_FOUND:
+                raise ValueError("User account does not exist")
+        return True
+
+    async def list_user_accounts(self) -> List[TeamTalkUserAccount]:
+        """Lists all user accounts on the server.
+
+        Returns:
+            A list of all user accounts.
+
+        Raises:
+            PermissionError: If the bot is not an admin.
+            ValueError: If an unknown error occurred.
+        """
+        if not self.is_admin():
+            raise PermissionError("The bot is not an admin")
+        self.user_accounts = []
+        result = sdk._DoListUserAccounts(self._tt, 0, 1000000)
+        if result == -1:
+            raise ValueError("Unknown error")
+        await asyncio.sleep(1)
+        return self.user_accounts
 
     # file stuff
     def upload_file(self, channel_id: int, filepath: str) -> None:
@@ -327,11 +663,30 @@ class TeamTalkInstance(sdk.TeamTalk):
         Raises:
             PermissionError: If the bot does not have permission to kick users.
             TypeError: If the user or channel is not a subclass of User or Channel.
+            ValueError: If the user or channel is not found.
         """
-        if not self.has_permission(Permission.KICK_USERS):
-            raise PermissionError("You do not have permission to kick users")
-        _log.debug(f"Kicking user {user} from channel {channel}")
-        self._do_cmd(user, channel, "_DoKickUser")
+        # first check if we are kicking from channel or server
+        if channel == 0:  # server
+            if not self.has_permission(Permission.KICK_USERS):
+                raise PermissionError("You do not have permission to kick users")
+            _log.debug(f"Kicking user {user} from channel {channel}")
+            self._do_cmd(user, channel, "_DoKickUser")
+        else:  # channel
+            if not self.has_permission(Permission.KICK_USERS_FROM_CHANNEL) or not sdk._IsChannelOperator(
+                self._tt, self.super.getMyUserID(), channel
+            ):
+                raise PermissionError("You do not have permission to kick users from channels")
+            result = self._do_cmd(user, channel, "_DoKickUser")
+        if result == -1:
+            raise ValueError("Uknown error")
+            cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+            if not cmd_result:
+                err_nr = cmd_err.nErrorNo
+                if err_nr == sdk.ClientError.CMDERR_USER_NOT_FOUND:
+                    raise ValueError("User not found")
+                if err_nr == sdk.ClientError.CMDERR_CHANNEL_NOT_FOUND:
+                    raise ValueError("Channel not found")
+            return cmd_result
 
     def ban_user(self, user: Union[TeamTalkUser, int], channel: Union[TeamTalkChannel, int]) -> None:
         """Bans a user from a channel or the server.
@@ -343,11 +698,20 @@ class TeamTalkInstance(sdk.TeamTalk):
         Raises:
             PermissionError: If the bot does not have permission to ban users.
             TypeError: If the user or channel is not a subclass of User or Channel.
+            ValueError: If the user is not found.
         """
         if not self.has_permission(Permission.BAN_USERS):
             raise PermissionError("You do not have permission to ban users")
         _log.debug(f"Banning user {user} from channel {channel}")
-        self._do_cmd(user, channel, "_DoBanUser")
+        result = self._do_cmd(user, channel, "_DoBanUser")
+        if result == -1:
+            raise ValueError("Uknown error")
+            cmd_result, cmd_err = _waitForCmd(self.super, result, 2000)
+            if not cmd_result:
+                err_nr = cmd_err.nErrorNo
+                if err_nr == sdk.ClientError.CMDERR_USER_NOT_FOUND:
+                    raise ValueError("User not found")
+            return cmd_result
 
     def unban_user(self, ip: str, channel: Union[TeamTalkChannel, int]) -> None:
         """Unbans a user from the server.
@@ -370,6 +734,25 @@ class TeamTalkInstance(sdk.TeamTalk):
             channel_id = channel.id
         _log.debug(f"Unbanning user {ip}")
         sdk._DoUnBanUser(self._tt, sdk.ttstr(ip), channel_id)
+
+    async def list_banned_users(self) -> List[TeamTalkBannedUserAccount]:
+        """Lists all banned users.
+
+        Returns:
+            List[BannedUserAccount]: A list of banned users.
+
+        Raises:
+            PermissionError: If the bot is not an admin.
+            ValueError: If an unknown error occurs.
+        """
+        if not self.is_admin():
+            raise PermissionError("The bot is not an admin")
+        self.banned_users = []
+        result = sdk._DoListBans(self._tt, 0, 0, 1000000)
+        if result == -1:
+            raise ValueError("Unknown error")
+        await asyncio.sleep(1)
+        return self.banned_users
 
     def _send_message(self, message: sdk.TextMessage, **kwargs):
         """Sends a message.
@@ -472,8 +855,17 @@ class TeamTalkInstance(sdk.TeamTalk):
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_MYSELF_KICKED:
             self.bot.dispatch("my_kicked_from_channel", TeamTalkChannel(self, msg.nSource))
             return
-        else:
-            _log.warning(f"Unhandled event: {event}")
+        if event == sdk.ClientEvent.CLIENTEVENT_CMD_USERACCOUNT:
+            account = TeamTalkUserAccount(self, msg.useraccount)
+            self.user_accounts.append(account)
+            return
+        if event == sdk.ClientEvent.CLIENTEVENT_CMD_BANNEDUSER:
+            # cast our msg.useraccount to a banned user
+            banned_user_struct = sdk.BannedUser()
+            ctypes.memmove(ctypes.byref(banned_user_struct), ctypes.byref(msg.useraccount), ctypes.sizeof(sdk.BannedUser))
+            banned_user = TeamTalkBannedUserAccount(self, banned_user_struct)
+            self.banned_users.append(banned_user)
+            return
 
     def _get_channel_info(self, channel_id: int):
         _channel = self.getChannel(channel_id)
@@ -482,6 +874,9 @@ class TeamTalkInstance(sdk.TeamTalk):
 
     def _get_my_permissions(self):
         return self.super._GetMyUserRights()
+
+    def _get_my_user(self):
+        return self.get_user(self.super.getMyUserID())
 
     def _do_cmd(self, user: Union[TeamTalkUser, int], channel: Union[TeamTalkChannel, int], func) -> None:
         if not self.has_permission(Permission.KICK_USERS):
@@ -497,4 +892,4 @@ class TeamTalkInstance(sdk.TeamTalk):
         if isinstance(channel, TeamTalkChannel):
             channel_id = channel.id
         sdk_func = getattr(sdk, func)
-        sdk_func(self._tt, user_id, channel_id)
+        return sdk_func(self._tt, user_id, channel_id)

@@ -789,12 +789,17 @@ class TeamTalkInstance(sdk.TeamTalk):
         if event == sdk.ClientEvent.CLIENTEVENT_USER_AUDIOBLOCK:
             # this one is a little special
             user = TeamTalkUser(self, msg.nSource)
-            ab = _AcquireUserAudioBlock(self._tt, msg.nSource, msg.ttType)
-            real_ab = AudioBlock(user, ab)
+            streamtype = sdk.StreamType(msg.nStreamType)
+            ab = _AcquireUserAudioBlock(self._tt, streamtype, msg.nSource)
+            # put the ab which is a pointer into the sdk.AudioBlock
+            ab2 = sdk.AudioBlock()
+            ctypes.memmove(ctypes.addressof(ab2), ab, ctypes.sizeof(ab2))
+            print(type(ab2))
+            real_ab = AudioBlock(user, ab2)
             # dispatch
             self.bot.dispatch("user_audio", real_ab)
             # release
-            _ReleaseUserAudioBlock(self._tt, ctypes.POINTER(sdk.AudioBlock)(ab))
+            _ReleaseUserAudioBlock(self._tt, ab)
             return
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_USER_TEXTMSG:
             message = None

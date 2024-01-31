@@ -17,7 +17,7 @@ This document holds a human-readable list of changes between releases.
     For more information on SemVer, please visit http://semver.org/.
 
 
-1.2.0 - Unreleased
+:version:`1.2.0` - 2024-01-31
 ---------------------------------
 
 This release adds subscriptions, and more expressive dir methods for Permissions, Channel Types and Server Properties, as well as fixing some long standing asyncio bugs. In addition, we also drop test compatibility for python 3.8, and we have updated to TeamTalk SDK 5.15

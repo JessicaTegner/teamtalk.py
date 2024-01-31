@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "teamtalk-py"
-version = "1.1.1"
+version = "1.2.0"
 description = "a simple but powerful pythonic library for making bots for the TeamTalk5 Conferencing System"
 authors = ["JessicaTegner <jessica.tegner@outlook.com>"]
 license = "MIT"
@@ -25,7 +25,7 @@ classifiers = [
 packages = [{include = "teamtalk"}]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9, <3.13"
 typing-extensions = "^4.5"
 requests = "^2.28"
 beautifulsoup4 = "^4.11"

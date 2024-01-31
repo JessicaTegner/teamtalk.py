@@ -20,7 +20,7 @@ This document holds a human-readable list of changes between releases.
 1.2.0 - Unreleased
 ---------------------------------
 
-This release adds subscriptions, and more expressive dir methods for Permissions, Channel Types and Server Properties, as well as fixing some long standing asyncio bugs. In addition, we also drop test compatibility for python 3.8
+This release adds subscriptions, and more expressive dir methods for Permissions, Channel Types and Server Properties, as well as fixing some long standing asyncio bugs. In addition, we also drop test compatibility for python 3.8, and we have updated to TeamTalk SDK 5.15
 
 Added
 ~~~~~
@@ -31,6 +31,7 @@ Added
 Changed / Fixed
 ~~~~~~~~~~~~~~~
 
+- Updated to TeamTalk SDK 5.15
 - Fixed a bug where if a registered coroutine called asyncio.sleep, the entire event loop would freeze until a new event was received.
 
 :version:`1.1.0` - 2023-03-24

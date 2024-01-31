@@ -20,13 +20,18 @@ This document holds a human-readable list of changes between releases.
 1.2.0 - Unreleased
 ---------------------------------
 
+This release adds subscriptions, and more expressive dir methods for Permissions, Channel Types and Server Properties, as well as fixing some long standing asyncio bugs.
+
 Added
 ~~~~~
 
 - Added support for subscriptions. You can now subscribe to events per user and get notified when they happen. You can also unsubscribe from events.
 - Added more expressive dir methods for Permissions, Channel Types and Server Properties. Now you can call dir(teamtalk.Permissions) and get a list of all permissions. Same for Channel Types and Server Properties.
 
+Changed / Fixed
+~~~~~~~~~~~~~~~
 
+- Fixed a bug where if a registered coroutine called asyncio.sleep, the entire event loop would freeze until a new event was received.
 
 :version:`1.1.0` - 2023-03-24
 ---------------------------------

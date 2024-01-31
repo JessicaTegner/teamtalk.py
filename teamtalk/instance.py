@@ -67,7 +67,7 @@ class TeamTalkInstance(sdk.TeamTalk):
             sdk.ttstr(self.server_info.host),
             self.server_info.tcp_port,
             self.server_info.udp_port,
-            self.server_info.encrypted,
+            bEncrypted=self.server_info.encrypted,
         ):
             return False
         result, msg = _waitForEvent(self.super, sdk.ClientEvent.CLIENTEVENT_CON_SUCCESS)
@@ -772,7 +772,7 @@ class TeamTalkInstance(sdk.TeamTalk):
 
     async def _process_events(self) -> None:  # noqa: C901
         """Processes events from the server. This is automatically called by teamtalk.Bot."""
-        msg = self.super.getMessage()
+        msg = self.super.getMessage(100)
         event = msg.nClientEvent
         if event != sdk.ClientEvent.CLIENTEVENT_NONE and _getAbsTimeDiff(self.init_time, time.time()) < 1500:
             # done so we don't get random events when logging in

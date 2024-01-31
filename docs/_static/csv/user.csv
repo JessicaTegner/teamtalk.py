@@ -1,3 +1,4 @@
+on_user_audio	teamtalk.AudioBlock	Called when a user transmits audio.
 on_user_login	teamtalk.user	Called when a user logs in to a server that the bot is on
 on_user_logout	teamtalk.User	Called when a user logs out from a server that the bot is on
 on_user_update	teamtalk.User	Called when a user gets updated

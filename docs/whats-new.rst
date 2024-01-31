@@ -20,7 +20,7 @@ This document holds a human-readable list of changes between releases.
 1.2.0 - Unreleased
 ---------------------------------
 
-This release adds subscriptions, and more expressive dir methods for Permissions, Channel Types and Server Properties, as well as fixing some long standing asyncio bugs.
+This release adds subscriptions, and more expressive dir methods for Permissions, Channel Types and Server Properties, as well as fixing some long standing asyncio bugs. In addition, we also drop test compatibility for python 3.8
 
 Added
 ~~~~~

@@ -30,7 +30,6 @@ typing-extensions = "^4.5"
 requests = "^2.28"
 beautifulsoup4 = "^4.11"
 patool = "^1.12"
-pywave = "^0.5"
 
 
 [tool.poetry.group.dev.dependencies]

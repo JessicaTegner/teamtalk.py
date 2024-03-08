@@ -118,15 +118,41 @@ class Streamer:
         # stop the streamer
         self.running = False
 
-    def stream(self, path: str) -> None:
-        """Streams a file or url to the channel.
+    def search_and_stream(self, query: str) -> None:
+        """Searches for a song and streams it to the channel.
 
         Args:
-            path (str): The path to the file or url to stream.
+            query (str): The query to search for.
+
+        Returns:
+            None
+        """
+        self.stop()
+        self.channel.send_message(f"Searching for {query}...")
+        yt_dlp_command = f"yt-dlp -f bestaudio --extract-audio --audio-format best --audio-quality 0 --quiet --get-url \"ytsearch:{query}\""  # noqa
+        result = subprocess.run(yt_dlp_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        song = result.stdout.decode("utf-8").strip()
+        if not song:
+            # send a message to the channel
+            self.channel.send_message("No results found.")
+            return
+        # stream the song
+        self.stream(song)
+
+    def stop(self) -> None:
+        """Stops the current stream."""
+        self.blocks.clear()
+        self._request_stop_stream()  # Gracefully request the current stream to stop.
+        self._wait_for_cleanup()  # Wait for the cleanup to complete.
+
+    def stream(self, path: str) -> int:
+        """Streams a file or an url to the channel.
+
+        Args:
+            path(str): The file or url to stream.
 
         Raises:
-            RuntimeError: If yt-dlp is not installed and the path is an url, or ffmpeg is not installed.
-            KeyboardInterrupt: If the stream is interrupted by a keyboard interrupt.
+            RuntimeError: If the url could not be opened as a wav file or if the file could not be converted to a wav file.
         """
         with self._stream_lock:
             self._request_stop_stream()  # Gracefully request the current stream to stop.
@@ -139,6 +165,7 @@ class Streamer:
 
     def _wait_for_cleanup(self):
         if self._current_streamer_thread:
+            self._current_streamer_running = False
             self.blocks.clear()  # Clear the blocks list, ensuring the streamer stops.
             self.blocks.append(b"")
 
@@ -147,7 +174,7 @@ class Streamer:
         self._current_streamer_thread = threading.Thread(target=self._stream, args=(path,), daemon=True)
         self._current_streamer_thread.start()
 
-    def _stream(self, path: str) -> None:
+    def _stream(self, path: str) -> int:
         if not self.ffmpeg_available:
             raise RuntimeError("Could not convert file to wav. ffmpeg is not installed.")
         if path.startswith("http"):
@@ -187,6 +214,77 @@ class Streamer:
             self._graceful_shutdown(ffmpeg_process)
             if path.startswith("http"):
                 self._graceful_shutdown(yt_dlp_process)
+
+    @property
+    def volume(self) -> int:
+        """The volume of the streamer.
+
+        Returns:
+            int: The volume of the streamer.
+        """
+        pre_processor = sdk.AudioPreprocessor()
+        sdk._GetSoundInputPreprocessEx(self.channel.server.teamtalk_instance._tt, pre_processor)
+        result = pre_processor.u.ttpreprocessor.nGainLevel
+        return int(round(result.value // 10))
+
+    @volume.setter
+    def volume(self, value: int) -> None:
+        """Sets the volume of the streamer.
+
+        Args:
+            value (int): The volume to set, between 0 and 100.
+        """
+        tt_volume = ctypes.c_int(value * 10)
+        pre_processor = sdk.AudioPreprocessor()
+        sdk._GetSoundInputPreprocessEx(self.channel.server.teamtalk_instance._tt, pre_processor)
+        pre_processor.u.ttpreprocessor.nGainLevel = tt_volume
+        sdk._SetSoundInputPreprocessEx(self.channel.server.teamtalk_instance._tt, pre_processor)
+
+    @property
+    def mute_left(self) -> bool:
+        """If the left channel of the speaker is muted.
+
+        Returns:
+            bool: True if the left channel is muted, False otherwise.
+        """
+        pre_processor = sdk.AudioPreprocessor()
+        sdk._GetSoundInputPreprocessEx(self.channel.server.teamtalk_instance._tt, pre_processor)
+        return pre_processor.u.ttpreprocessor.bMuteLeft.value
+
+    @mute_left.setter
+    def mute_left(self, mute: bool) -> None:
+        """Sets the mute state of the left channel of the speaker.
+
+        Args:
+            mute (bool): True to mute the left channel, False to unmute it.
+        """
+        pre_processor = sdk.AudioPreprocessor()
+        sdk._GetSoundInputPreprocessEx(self.channel.server.teamtalk_instance._tt, pre_processor)
+        pre_processor.u.ttpreprocessor.bMuteLeft = ctypes.c_bool(mute)
+        sdk._SetSoundInputPreprocessEx(self.channel.server.teamtalk_instance._tt, pre_processor)
+
+    @property
+    def mute_right(self) -> bool:
+        """If the right channel of the speaker is muted.
+
+        Returns:
+            bool: True if the right channel is muted, False otherwise.
+        """
+        pre_processor = sdk.AudioPreprocessor()
+        sdk._GetSoundInputPreprocessEx(self.channel.server.teamtalk_instance._tt, pre_processor)
+        return pre_processor.u.ttpreprocessor.bMuteRight.value
+
+    @mute_right.setter
+    def mute_right(self, mute: bool) -> None:
+        """Sets the mute state of the right channel of the speaker.
+
+        Args:
+            mute (bool): True to mute the right channel, False to unmute it.
+        """
+        pre_processor = sdk.AudioPreprocessor()
+        sdk._GetSoundInputPreprocessEx(self.channel.server.teamtalk_instance._tt, pre_processor)
+        pre_processor.u.ttpreprocessor.bMuteRight = ctypes.c_bool(mute)
+        sdk._SetSoundInputPreprocessEx(self.channel.server.teamtalk_instance._tt, pre_processor)
 
     def _get_url_data(self, url):
         yt_dlp_command = [

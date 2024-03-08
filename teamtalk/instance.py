@@ -859,6 +859,7 @@ class TeamTalkInstance(sdk.TeamTalk):
                 sdk.ClientEvent.CLIENTEVENT_CMD_PROCESSING,
                 sdk.ClientEvent.CLIENTEVENT_CMD_ERROR,
                 sdk.ClientEvent.CLIENTEVENT_CMD_SUCCESS,
+                sdk.ClientEvent.CLIENTEVENT_AUDIOINPUT,
             ):
                 _log.warning(f"Unhandled event: {event}")
 

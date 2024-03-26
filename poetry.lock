@@ -479,18 +479,6 @@ plugins = ["importlib-metadata"]
 windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
-name = "pywave"
-version = "0.5.0"
-description = "Open, read and write Wave files"
-category = "main"
-optional = false
-python-versions = "*"
-files = [
-    {file = "PyWave-0.5.0-py2.py3-none-any.whl", hash = "sha256:d31bb468ff0501f0dacbe30c0d4c32aaf86d1421de2d5f08b50d428fca2bea48"},
-    {file = "PyWave-0.5.0.tar.gz", hash = "sha256:f1592fd71be7e94a4da00f0254f346e8e867893d38c15ae1fdf1872eaf61c615"},
-]
-
-[[package]]
 name = "pyyaml"
 version = "6.0.1"
 description = "YAML parser and emitter for Python"
@@ -878,4 +866,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9, <3.13"
-content-hash = "37c4c4faef93ba3c3aaeefba6366a5ec40335d9c1d2f103c3c58f87c4cfa3f15"
+content-hash = "1aad2ccb4755441876561fb43b04856b8e0dbaf757489906708aef733fd7b3d1"

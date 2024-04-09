@@ -69,10 +69,6 @@ class TeamTalkBot:
             async with self:
                 await self._start()
 
-        # setup logging to log debug messages
-        # and log everyhting to console
-        logging.basicConfig(level=logging.DEBUG)
-
         try:
             # set our loop the asyncio event loop
             asyncio.run(runner())

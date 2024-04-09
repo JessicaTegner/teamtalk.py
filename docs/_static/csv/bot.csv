@@ -2,5 +2,6 @@ on_message	teamtalk.Message (either teamtalk.ChannelMessage, teamtalk.DirectMess
 on_my_connect	teamtalk.Server	Called when the bot has successfully connected to the teamtalk.Server
 on_my_login	teamtalk.Server	Called when the bot has successfully logged in to the teamtalk.Server
 on_my_logout	teamtalk.Server	Called when the bot has successfully logged out from the teamtalk.Server
-on_my_disconnec	teamtalk.Server	Called when the bot has successfully disconnected from the teamtalk.Server
+on_my_disconnect	teamtalk.Server	Called when the bot has successfully disconnected from the teamtalk.Server
+on_my_connection_lost	teamtalk.Server	Called when the connection to the teamtalk.Server gets lost
 on_my_kicked_from_channel	teamtalk.Channel	Called when the bot has been kicked from teamtalk.Channel

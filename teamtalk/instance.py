@@ -72,6 +72,7 @@ class TeamTalkInstance(sdk.TeamTalk):
             return False
         result, msg = _waitForEvent(self.super, sdk.ClientEvent.CLIENTEVENT_CON_SUCCESS)
         if not result:
+            self.bot.dispatch("my_connection_lost", self.server)
             return False
         self.bot.dispatch("my_connect", self.server)
         self.connected = True
@@ -98,9 +99,9 @@ class TeamTalkInstance(sdk.TeamTalk):
             return False
         self.bot.dispatch("my_login", self.server)
         self.logged_in = True
-        if join_channel_on_login:
-            channel_id = self.server_info.join_channel_id
-            if channel_id < 1:
+        if join_channel_on_login \
+        and (channel_id := self.server_info.join_channel_id) >= 0:
+            if channel_id == 0:
                 channel_id = self.super.getRootChannelID()
             self.join_channel_by_id(channel_id)
         self.init_time = time.time()
@@ -131,7 +132,7 @@ class TeamTalkInstance(sdk.TeamTalk):
             status_mode: The status mode.
             status_message: The status message.
         """
-        self.super.doChangeStatus(status_mode, status_message)
+        self.super.doChangeStatus(status_mode, sdk.ttstr(status_message))
 
     # permission stuff
     def has_permission(self, permission: Permission) -> bool:
@@ -484,8 +485,8 @@ class TeamTalkInstance(sdk.TeamTalk):
             PermissionError: If the bot does not have permission to create a user account or if the bot is not logged in.
         """
         account = sdk.UserAccount()
-        account.szUsername = username
-        account.szPassword = password
+        account.szUsername = sdk.ttstr(username)
+        account.szPassword = sdk.ttstr(password)
         account.uUserType = usertype
         result = sdk._DoNewUserAccount(self._tt, account)
         if result == -1:
@@ -840,6 +841,9 @@ class TeamTalkInstance(sdk.TeamTalk):
         # other "my" events
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_MYSELF_KICKED:
             self.bot.dispatch("my_kicked_from_channel", TeamTalkChannel(self, msg.nSource))
+            return
+        if event == sdk.ClientEvent.CLIENTEVENT_CON_LOST or event == sdk.ClientEvent.CLIENTEVENT_CON_FAILED:
+            self.bot.dispatch("my_connection_lost", self.server)
             return
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_USERACCOUNT:
             account = TeamTalkUserAccount(self, msg.useraccount)

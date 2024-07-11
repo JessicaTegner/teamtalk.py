@@ -852,6 +852,10 @@ class TeamTalkInstance(sdk.TeamTalk):
             banned_user = TeamTalkBannedUserAccount(self, banned_user_struct)
             self.banned_users.append(banned_user)
             return
+        if event == sdk.ClientEvent.CLIENTEVENT_CON_LOST:
+            self.bot.dispatch("my_connection_lost", self)
+            return
+
         else:
             # if we haven't handled the event, log it
             # except if it's CLIENTEVENT_CMD_PROCESSING or CLIENTEVENT_CMD_ERROR or CLIENTEVENT_CMD_SUCCESS

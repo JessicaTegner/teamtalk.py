@@ -20,6 +20,11 @@ This document holds a human-readable list of changes between releases.
 version: 1.3.0 - unreleased
 ---------------------------------
 
+Added
+~~~~~
+
+- Added the handling of the bot lost connection to the server event.
+
 Fixed
 ~~~~~
 

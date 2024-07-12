@@ -26,10 +26,10 @@ packages = [{include = "teamtalk"}]
 
 [tool.poetry.dependencies]
 python = "^3.9, <3.13"
-typing-extensions = "^4.5"
-requests = "^2.28"
-beautifulsoup4 = "^4.11"
-patool = "^1.12"
+typing-extensions = "^4.12"
+requests = "^2.32"
+beautifulsoup4 = "^4.12"
+patool = "^1.15"
 
 
 [tool.poetry.group.dev.dependencies]

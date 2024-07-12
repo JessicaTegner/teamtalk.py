@@ -17,8 +17,10 @@ This document holds a human-readable list of changes between releases.
     For more information on SemVer, please visit http://semver.org/.
 
 
-version: 1.3.0 - unreleased
+:version:`1.2.1` - 2024-07-12
 ---------------------------------
+
+This release adds the handling of the bot lost connection to the server event, a join_channel method to the teamtalk.Server class, an is_me function to the teamtalk.User class, and more descriptive error messages for the TT SDK Downloader, when failing to extract the sdk due to missing 7zip or equivalent.
 
 Added
 ~~~~~

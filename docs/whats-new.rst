@@ -26,6 +26,7 @@ Added
 - Added the handling of the bot lost connection to the server event.
 - Added a join_channel method to the teamtalk.Server class.
 - Added an is_me function to the teamtalk.User class.
+- Added more descriptive error messages for the TT SDK Downloader, when failing to extract the sdk due to missing 7zip or equivalent.
 
 Fixed
 ~~~~~

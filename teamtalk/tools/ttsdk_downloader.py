@@ -103,10 +103,21 @@ def clean() -> None:
 
 def install() -> None:
     print("Installing TeamTalk sdk components")
-    print("Downloading latest sdk version")
-    download()
-    print("Downloaded. extracting")
-    extract()
+    try:
+        print("Downloading latest sdk version")
+        download()
+    except Exception as e:
+        print("Failed to download sdk. Error: ", e)
+        sys.exit(1)
+    try:
+        print("Downloaded. extracting")
+        extract()
+    except patoolib.util.PatoolError as e:
+        print("Failed to extract sdk. Error: ", e)
+        print("This can typically happen, if you do not have 7zip or equivalent installed on your system.")
+        print("On debian based systems, you can install 7zip by running 'sudo apt install p7zip'")
+        print("On Windows, you need to have 7zip installed and added to your PATH")
+        sys.exit(1)
     print("Extracted. moving")
     move()
     print("moved. cleaning")

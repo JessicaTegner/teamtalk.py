@@ -29,7 +29,7 @@ class Channel:
         elif isinstance(channel, sdk.Channel):
             self._channel = channel
             self.id = channel.nChannelID
-            self.channel_path = channel.szName
+            self.path = sdk.ttstr(self.teamtalk._get_channel_path(channel.nChannelID))
         self.server = self.teamtalk.server
 
     def update(self) -> bool:
@@ -70,7 +70,7 @@ class Channel:
         return True
 
     def _refresh(self) -> None:
-        self._channel, self.channel_path = self.teamtalk._get_channel_info(self.id)
+        self._channel, self.path = self.teamtalk._get_channel_info(self.id)
 
     def send_message(self, content: str, **kwargs) -> None:
         """Send a message to the channel.

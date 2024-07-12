@@ -24,6 +24,8 @@ Added
 ~~~~~
 
 - Added the handling of the bot lost connection to the server event.
+- Added a join_channel method to the teamtalk.Server class.
+- Added an is_me function to the teamtalk.User class.
 
 Fixed
 ~~~~~

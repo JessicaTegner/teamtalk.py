@@ -869,7 +869,7 @@ class TeamTalkInstance(sdk.TeamTalk):
 
     def _get_channel_info(self, channel_id: int):
         _channel = self.getChannel(channel_id)
-        _channel_path = self.getChannelPath(channel_id)
+        _channel_path = sdk.ttstr(self.getChannelPath(channel_id))
         return _channel, _channel_path
 
     def _get_my_permissions(self):

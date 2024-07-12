@@ -104,6 +104,29 @@ class Server:
         user = self.teamtalk_instance.super.getUser(user_id)
         return TeamTalkUser(self.teamtalk_instance, user)
 
+    def join_channel(self, channel: Union[TeamTalkChannel, str, int], password=""):
+        """Joins the specified channel.
+
+        Args:
+            channel: The channel to join.
+            password: The password for the channel, if required.
+
+        Returns:
+            True if the channel was joined successfully, False otherwise.
+        """
+        _channel = None
+        if isinstance(channel, str):
+            if not channel.endswith("/"):
+                channel += "/"
+            _channel = self.teamtalk_instance.get_channel_from_path(channel)
+        elif isinstance(channel, int):
+            _channel = self.get_channel(channel)
+        elif isinstance(channel, TeamTalkChannel):
+            _channel = channel
+        if _channel is None:
+            return False
+        return self.teamtalk_instance.join_channel(_channel, password)
+
     def move_user(self, user: Union[TeamTalkUser, int], channel: Union[TeamTalkChannel, int]):
         """Moves the specified user to the specified channel.
 

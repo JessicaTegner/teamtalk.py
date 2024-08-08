@@ -198,10 +198,10 @@ class Channel:
             self.__dict__[name] = value
         else:
             # id cannot be change.
-            if name in ["teamtalk", "id", "server", "channel_path", "_channel"]:
+            if name in ["teamtalk", "id", "server", "path", "_channel"]:
                 self.__dict__[name] = value
             else:
-                _get_tt_obj_attribute(self.properties, name)
+                _get_tt_obj_attribute(self._channel, name)
                 # if we have gotten here, we can set the attribute
                 _set_tt_obj_attribute(self._channel, name, value)
 

@@ -128,8 +128,15 @@ class Server:
         return self.teamtalk_instance.join_channel(_channel, password)
 
     def get_statistics(self, timeout: int = 2):
-        return self.teamtalk_instance.get_server_statistics(timeout)
+        """Gets the servers statistics.
 
+        Args:
+            timeout: The time to wait before assuming that getting the servers statistics failed.
+
+        Returns:
+            The teamtalk.Statistics instance representing the servers statistics.
+        """
+        return self.teamtalk_instance.get_server_statistics(timeout)
 
     def move_user(self, user: Union[TeamTalkUser, int], channel: Union[TeamTalkChannel, int]):
         """Moves the specified user to the specified channel.

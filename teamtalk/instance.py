@@ -756,6 +756,9 @@ class TeamTalkInstance(sdk.TeamTalk):
         """
         Gets the statistics from the server.
 
+        Args:
+            timeout: The time to wait before assuming that getting the servers statistics failed.
+
         Raises:
             TimeoutError: If the server statistics are not received with in the given time.
 

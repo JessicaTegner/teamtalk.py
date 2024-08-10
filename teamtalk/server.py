@@ -127,6 +127,10 @@ class Server:
             return False
         return self.teamtalk_instance.join_channel(_channel, password)
 
+    def get_statistics(self, timeout: int = 2):
+        return self.teamtalk_instance.get_server_statistics(timeout)
+
+
     def move_user(self, user: Union[TeamTalkUser, int], channel: Union[TeamTalkChannel, int]):
         """Moves the specified user to the specified channel.
 

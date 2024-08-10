@@ -842,7 +842,7 @@ class TeamTalkInstance(sdk.TeamTalk):
             self.bot.dispatch("server_update", self.server)
             return
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_SERVERSTATISTICS:
-            self.bot.dispatch("server_statistics", TeamTalkStatistics(self, msg.serverstatistics))
+            self.bot.dispatch("server_statistics", TeamTalkServerStatistics(self, msg.serverstatistics))
             return
         # FILE EVENTS
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_FILE_NEW:

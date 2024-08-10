@@ -26,7 +26,7 @@ from .tt_file import RemoteFile
 from .user import User as TeamTalkUser
 from .user_account import UserAccount as TeamTalkUserAccount
 from .user_account import BannedUserAccount as TeamTalkBannedUserAccount
-from .statistics import Statistics as TeamTalkStatistics
+from .statistics import Statistics as TeamTalkServerStatistics
 
 
 _log = logging.getLogger(__name__)
@@ -752,18 +752,18 @@ class TeamTalkInstance(sdk.TeamTalk):
         await asyncio.sleep(1)
         return self.banned_users
 
-    def get_statistics(self):
+    def get_server_statistics(self, timeout: int) -> TeamTalkServerStatistics:
         """
         Gets the statistics from the server.
 
         Raises:
-            TimeoutError: If the server statistics are not received with in 2 seconds.
+            TimeoutError: If the server statistics are not received with in the given time.
         """
         sdk._DoQueryServerStats(self._tt)
-        result, msg = _waitForEvent(self.super, sdk.ClientEvent.CLIENTEVENT_CMD_SERVERSTATISTICS, 2000)
+        result, msg = _waitForEvent(self.super, sdk.ClientEvent.CLIENTEVENT_CMD_SERVERSTATISTICS, timeout)
         if not result:
             raise TimeoutError("The request for server statistics timed out.")
-        return TeamTalkStatistics(self, msg.serverstatistics)
+        return TeamTalkServerStatistics(self, msg.serverstatistics)
 
     def _send_message(self, message: sdk.TextMessage, **kwargs):
         """Sends a message.

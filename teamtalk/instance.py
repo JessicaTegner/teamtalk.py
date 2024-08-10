@@ -758,6 +758,9 @@ class TeamTalkInstance(sdk.TeamTalk):
 
         Raises:
             TimeoutError: If the server statistics are not received with in the given time.
+
+        returns:
+            The teamtalk.statistics object representing the servers statistics.
         """
         sdk._DoQueryServerStats(self._tt)
         result, msg = _waitForEvent(self.super, sdk.ClientEvent.CLIENTEVENT_CMD_SERVERSTATISTICS, timeout)

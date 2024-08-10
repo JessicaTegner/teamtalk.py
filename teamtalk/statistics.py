@@ -2,8 +2,10 @@
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
 from ._utils import _get_tt_obj_attribute
 
+
 class Statistics:
     """represents the statistics of a TeamTalk server."""
+
     def __init__(self, teamtalk, statistics: sdk.ServerStatistics) -> None:
         """
         Initialize a statistics object.
@@ -34,6 +36,5 @@ class Statistics:
             return _get_tt_obj_attribute(self._statistics, name)
 
     def refresh(self):
-        """Refreshes The servers statistics.
-        """
+        """Refreshes The servers statistics."""
         self = self.teamtalk.get_server_statistics()

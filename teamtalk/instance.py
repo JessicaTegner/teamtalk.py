@@ -26,6 +26,7 @@ from .tt_file import RemoteFile
 from .user import User as TeamTalkUser
 from .user_account import UserAccount as TeamTalkUserAccount
 from .user_account import BannedUserAccount as TeamTalkBannedUserAccount
+from .statistics import Statistics as TeamTalkServerStatistics
 
 
 _log = logging.getLogger(__name__)
@@ -669,7 +670,7 @@ class TeamTalkInstance(sdk.TeamTalk):
             _log.debug(f"Kicking user {user} from channel {channel}")
             self._do_cmd(user, channel, "_DoKickUser")
         else:  # channel
-            if not self.has_permission(Permission.KICK_USERS_FROM_CHANNEL) or not sdk._IsChannelOperator(
+            if not self.has_permission(Permission.KICK_USERS_FROM_CHANNEL) and not sdk._IsChannelOperator(
                 self._tt, self.super.getMyUserID(), channel
             ):
                 raise PermissionError("You do not have permission to kick users from channels")
@@ -751,6 +752,25 @@ class TeamTalkInstance(sdk.TeamTalk):
         await asyncio.sleep(1)
         return self.banned_users
 
+    def get_server_statistics(self, timeout: int) -> TeamTalkServerStatistics:
+        """
+        Gets the statistics from the server.
+
+        Args:
+            timeout: The time to wait before assuming that getting the servers statistics failed.
+
+        Raises:
+            TimeoutError: If the server statistics are not received with in the given time.
+
+        returns:
+            The teamtalk.statistics object representing the servers statistics.
+        """
+        sdk._DoQueryServerStats(self._tt)
+        result, msg = _waitForEvent(self.super, sdk.ClientEvent.CLIENTEVENT_CMD_SERVERSTATISTICS, timeout)
+        if not result:
+            raise TimeoutError("The request for server statistics timed out.")
+        return TeamTalkServerStatistics(self, msg.serverstatistics)
+
     def _send_message(self, message: sdk.TextMessage, **kwargs):
         """Sends a message.
 
@@ -828,7 +848,7 @@ class TeamTalkInstance(sdk.TeamTalk):
             self.bot.dispatch("server_update", self.server)
             return
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_SERVERSTATISTICS:
-            self.bot.dispatch("server_statistics", self.server)
+            self.bot.dispatch("server_statistics", TeamTalkServerStatistics(self, msg.serverstatistics))
             return
         # FILE EVENTS
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_FILE_NEW:

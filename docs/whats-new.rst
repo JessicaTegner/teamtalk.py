@@ -16,6 +16,20 @@ This document holds a human-readable list of changes between releases.
 
     For more information on SemVer, please visit http://semver.org/.
 
+:version:`1.3.0` - Unreleased
+---------------------------------
+
+Added
+~~~~~
+
+- Added server statistics support. See the new teamtalk.Statistics class for more information.
+
+Fixed
+~~~~~
+
+- Fixed various recursion errors when trying to get underlying SDK properties from a teamtalk.Channel.
+- Fixed PermissionError when trying to kick a user from a channel.
+
 
 :version:`1.2.1` - 2024-07-12
 ---------------------------------

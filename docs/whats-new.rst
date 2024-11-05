@@ -29,7 +29,7 @@ Fixed
 
 - Fixed various recursion errors when trying to get underlying SDK properties from a teamtalk.Channel.
 - Fixed PermissionError when trying to kick a user from a channel.
-
+- Fixed errors on linux with certain functions do to improper use of sdk.ttstr.
 
 :version:`1.2.1` - 2024-07-12
 ---------------------------------

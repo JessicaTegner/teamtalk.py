@@ -92,7 +92,7 @@ class Channel:
         msg.nFromUserID = self.teamtalk.getMyUserID()
         msg.szFromUsername = self.teamtalk.getMyUserAccount().szUsername
         msg.nChannelID = self.id
-        msg.szMessage = content
+        msg.szMessage = sdk.ttstr(content)
         msg.bMore = False
         # get a pointer to our message
         self.teamtalk._send_message(msg, **kwargs)

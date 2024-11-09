@@ -21,6 +21,7 @@ classifiers = [
 dependencies = [
     "beautifulsoup4>=4.12.3",
     "patool>=3.0.3",
+    "pyaudio>=0.2.14",
     "requests>=2.32.3",
     "typing-extensions>=4.12.2",
 ]

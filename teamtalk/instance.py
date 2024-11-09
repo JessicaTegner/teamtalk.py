@@ -814,7 +814,6 @@ class TeamTalkInstance(sdk.TeamTalk):
             # put the ab which is a pointer into the sdk.AudioBlock
             ab2 = sdk.AudioBlock()
             ctypes.memmove(ctypes.addressof(ab2), ab, ctypes.sizeof(ab2))
-            print(type(ab2))
             real_ab = AudioBlock(user, ab2)
             # dispatch
             self.bot.dispatch("user_audio", real_ab)

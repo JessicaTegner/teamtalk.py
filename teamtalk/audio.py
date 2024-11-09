@@ -19,6 +19,8 @@ Not to be confused with the underlying AudioBlock class, this is used in the "on
 
 """
 
+import ctypes
+
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
 
 from ._utils import _get_tt_obj_attribute
@@ -54,7 +56,22 @@ class AudioBlock:
         self.user = user
         self._block = block
         self.id = block.nStreamID
-        self.data = block.lpRawAudio
+        self.data_pointer = block.lpRawAudio
+        self._data = None
+
+    @property
+    def data(self):
+        """The audio data.
+
+        Returns:
+            The audio data.
+        """
+        if self._data is None:
+            total_samples = self._block.nSamples * self._block.nChannels
+            buffer_type = ctypes.c_short * total_samples
+            buffer_ptr = ctypes.cast(self.data_pointer, ctypes.POINTER(buffer_type))
+            self._data = bytes(buffer_ptr.contents)
+        return self._data
 
     def __getattr__(self, name: str):
         """Try to get the attribute from the AUdioBlock object.

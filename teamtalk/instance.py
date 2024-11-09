@@ -123,7 +123,7 @@ class TeamTalkInstance(sdk.TeamTalk):
         Args:
             nickname: The new nickname.
         """
-        self.super.doChangeNickname(nickname)
+        self.super.doChangeNickname(sdk.ttstr(nickname))
 
     def change_status(self, status_mode: UserStatusMode, status_message: str):
         """Changes the status of the bot.
@@ -132,7 +132,7 @@ class TeamTalkInstance(sdk.TeamTalk):
             status_mode: The status mode.
             status_message: The status message.
         """
-        self.super.doChangeStatus(status_mode, status_message)
+        self.super.doChangeStatus(status_mode, sdk.ttstr(status_message))
 
     # permission stuff
     def has_permission(self, permission: Permission) -> bool:
@@ -231,7 +231,7 @@ class TeamTalkInstance(sdk.TeamTalk):
         Args:
             channel: The channel to join.
         """
-        self.super.doJoinChannelByID(channel.id, sdk.ttstr(channel.password))
+        self.super.doJoinChannelByID(channel.id, channel.password)
 
     def leave_channel(self):
         """Leaves the current channel."""

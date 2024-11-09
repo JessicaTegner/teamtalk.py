@@ -19,7 +19,7 @@ Alternatively, you can download the source code from the GitHub repository and r
 
     git clone https://github.com/JessicaTegner/teamtalk.py.git
     cd teamtalk.py
-    poetry build
+    uv build
     pip install dist/teamtalk.py-*.tar.gz
 
 

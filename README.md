@@ -27,7 +27,7 @@ pip install teamtalk.py
 ```bash
 git clone https://github.com/JessicaTegner/teamtalk.py
 cd teamtalk.py
-poetry install
+uv sync
 ```
 
 

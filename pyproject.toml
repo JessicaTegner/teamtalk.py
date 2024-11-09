@@ -1,15 +1,12 @@
-[tool.poetry]
+[project]
 name = "teamtalk-py"
 version = "1.2.1"
 description = "a simple but powerful pythonic library for making bots for the TeamTalk5 Conferencing System"
-authors = ["JessicaTegner <jessica.tegner@outlook.com>"]
-license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/JessicaTegner/teamtalk.py/"
-repository = "https://github.com/JessicaTegner/teamtalk.py/"
-documentation = "https://teamtalkpy.readthedocs.io/en/latest/"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "JessicaTegner", email = "jessica.tegner@outlook.com"}]
 keywords = ["teamtalk", "teamtalk5", "teamtalk sdk", "conferencing"]
-
 classifiers = [
     "Development Status :: 4 - Beta",
     "Framework :: AsyncIO",
@@ -21,28 +18,23 @@ classifiers = [
     "Topic :: Utilities",
     "Typing :: Typed",
 ]
+dependencies = [
+    "beautifulsoup4>=4.12.3",
+    "patool>=3.0.3",
+    "requests>=2.32.3",
+    "typing-extensions>=4.12.2",
+]
 
-packages = [{include = "teamtalk"}]
+[project.urls]
+"Issue Tracker" = "https://github.com/JessicaTegner/teamtalk.py/issues/"
 
-[tool.poetry.dependencies]
-python = "^3.9, <3.13"
-typing-extensions = "^4.12"
-requests = "^2.32"
-beautifulsoup4 = "^4.12"
-patool = "^1.15"
-
-
-[tool.poetry.group.dev.dependencies]
-pre-commit = "^3.1"
-
-[tool.poetry.group.docs]
-optional = true
-
-[tool.poetry.group.docs.dependencies]
-sphinx = "^6.1"
-sphinxcontrib-trio = "^1.1"
-sphinxcontrib-napoleon = "^0.7"
-sphinx-sitemap = "^2.5.0"
+[project.optional-dependencies]
+docs = [
+    "sphinx-sitemap>=2.6.0",
+    "sphinx>=8.1.3",
+    "sphinxcontrib-napoleon>=0.7",
+    "sphinxcontrib-trio>=1.1.2",
+]
 
 [tool.black]
 line-length = 125
@@ -50,16 +42,22 @@ skip-string-normalization = true
 
 [tool.flake8]
 ignore = ["E203", "E731", "W503", "D401", "DAR402", "DAR103"]
-exclude = ['docs/*', 'tests/*', 'teamtalk/tools/*', '__pycache__', 'teamtalk/implementation/*', 'teamtalk/__init__.py', 'teamtalk/implementation/__init__.py', 'example.py']
+exclude = [
+    "docs/*",
+    "tests/*",
+    "teamtalk/tools/*",
+    "__pycache__",
+    "teamtalk/implementation/*",
+    "teamtalk/__init__.py",
+    "teamtalk/implementation/__init__.py",
+    "example.py",
+]
 max-line-length = 125
 count = true
 statistics = true
 max-complexity = 20
 
-[tool.poetry.urls]
-"Issue Tracker" = "https://github.com/JessicaTegner/teamtalk.py/issues/"
-
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[dependency-groups]
+dev = [
+    "pre-commit>=4.0.1",
+]

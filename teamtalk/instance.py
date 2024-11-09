@@ -18,7 +18,7 @@ from .channel import ChannelType
 from .enums import TeamTalkServerInfo, UserStatusMode, UserType
 from .exceptions import PermissionError
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
-from .audio import AudioBlock, _AcquireUserAudioBlock, _ReleaseUserAudioBlock
+from .audio import AudioBlock, MuxedAudioBlock, _AcquireUserAudioBlock, _ReleaseUserAudioBlock
 from .message import BroadcastMessage, ChannelMessage, CustomMessage, DirectMessage
 from .subscription import Subscription
 from .permission import Permission
@@ -800,7 +800,19 @@ class TeamTalkInstance(sdk.TeamTalk):
         if event == sdk.ClientEvent.CLIENTEVENT_USER_FIRSTVOICESTREAMPACKET:
             sdk._EnableAudioBlockEventEx(self._tt, msg.user.nUserID, sdk.StreamType.STREAMTYPE_VOICE, None, True)
             return
-        if event != sdk.ClientEvent.CLIENTEVENT_NONE and _getAbsTimeDiff(self.init_time, time.time()) < 1500:
+        if event == sdk.ClientEvent.CLIENTEVENT_CMD_USER_JOINED:
+            if msg.user.nUserID == self.super.getMyUserID():
+                sdk._EnableAudioBlockEventEx(self._tt, sdk.TT_MUXED_USERID, sdk.StreamType.STREAMTYPE_VOICE, None, True)
+            user = TeamTalkUser(self, msg.user)
+            self.bot.dispatch("user_join", user, user.channel)
+            return
+        if event == sdk.ClientEvent.CLIENTEVENT_CMD_USER_LEFT:
+            if msg.user.nUserID == self.super.getMyUserID():
+                sdk._EnableAudioBlockEventEx(self._tt, sdk.TT_MUXED_USERID, sdk.StreamType.STREAMTYPE_VOICE, None, False)
+            user = TeamTalkUser(self, msg.user)
+            self.bot.dispatch("user_left", user, TeamTalkChannel(self, msg.nSource))
+            return
+        if event != sdk.ClientEvent.CLIENTEVENT_NONE and _getAbsTimeDiff(self.init_time, time.time()) < 1000:
             # done so we don't get random events when logging in
             print(f"Ignoring event {event}")
             return
@@ -808,15 +820,18 @@ class TeamTalkInstance(sdk.TeamTalk):
             return
         if event == sdk.ClientEvent.CLIENTEVENT_USER_AUDIOBLOCK:
             # this one is a little special
-            user = TeamTalkUser(self, msg.nSource)
             streamtype = sdk.StreamType(msg.nStreamType)
             ab = _AcquireUserAudioBlock(self._tt, streamtype, msg.nSource)
             # put the ab which is a pointer into the sdk.AudioBlock
             ab2 = sdk.AudioBlock()
             ctypes.memmove(ctypes.addressof(ab2), ab, ctypes.sizeof(ab2))
-            real_ab = AudioBlock(user, ab2)
-            # dispatch
-            self.bot.dispatch("user_audio", real_ab)
+            if msg.nSource == sdk.TT_MUXED_USERID:
+                real_ab = MuxedAudioBlock(ab2)
+                self.bot.dispatch("muxed_audio", real_ab)
+            else:
+                user = TeamTalkUser(self, msg.nSource)
+                real_ab = AudioBlock(user, ab2)
+                self.bot.dispatch("user_audio", real_ab)
             # release
             _ReleaseUserAudioBlock(self._tt, ab)
             return
@@ -842,14 +857,6 @@ class TeamTalkInstance(sdk.TeamTalk):
             return
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_USER_UPDATE:
             self.bot.dispatch("user_update", TeamTalkUser(self, msg.user))
-            return
-        if event == sdk.ClientEvent.CLIENTEVENT_CMD_USER_JOINED:
-            user = TeamTalkUser(self, msg.user)
-            self.bot.dispatch("user_join", user, user.channel)
-            return
-        if event == sdk.ClientEvent.CLIENTEVENT_CMD_USER_LEFT:
-            user = TeamTalkUser(self, msg.user)
-            self.bot.dispatch("user_left", user, TeamTalkChannel(self, msg.nSource))
             return
         # channel events
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_CHANNEL_NEW:

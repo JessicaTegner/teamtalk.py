@@ -89,3 +89,30 @@ class AudioBlock:
             return self.__dict__[name]
         else:
             return _get_tt_obj_attribute(self._block, name)
+
+
+class MuxedAudioBlock(AudioBlock):
+    """Represents an audio block for the on_muxed_audio event.
+
+    .. note:
+        This class inherits from :class:`AudioBlock`.
+
+    Attributes:
+        id: The stream ID of the audio block.
+        data: The audio data.
+        sample_rate: The sample rate of the audio data.
+        channels: The number of channels in the audio data.
+        samples: The number of samples in the audio data.
+    """
+
+    def __init__(self, block):
+        """Represents an audio block for the on_muxed_audio event.
+
+        Args:
+            block: The underlying AudioBlock object.
+        """
+        super().__init__(None, block)
+
+        @property
+        def user(self):
+            raise AttributeError("MuxedAudioBlock has no attribute 'user'")

@@ -16,35 +16,39 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, windows-2019]
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+      - name: Install system dependencies (Ubuntu)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpulse0
       - name: Set up python
         id: setup-python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Print Python Information
         run: python -VV
-      - name: Install and configure Poetry
+      - name: Install and configure uv
         run: |
-          pip3 install poetry
-          poetry config virtualenvs.in-project true
+          pip3 install uv
       - name: Set up cache
-        uses: actions/cache@v3
-        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        id: cached-uv-dependencies
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/uv.lock') }}
       - name: Install dependencies
-        run: poetry install --with dev
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: uv sync --all-extras
+        if: steps.cached-uv-dependencies.outputs.cache-hit != 'true'
       - name: Download TeamTalk SDK
-        run: poetry run python -c "import teamtalk"
+        run: uv run python -c "import teamtalk"
       - name: run linting
-        run: poetry run pre-commit run --all-files
+        run: uv run pre-commit run --all-files
 
   builder_teamtalk:
     needs: [test]
@@ -52,27 +56,26 @@ jobs:
     runs-on: ubuntu-20.04  # Any OS is fine as this wheel is not OS dependent
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up python
         id: setup-python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.9  # Build any 1 python version as this wheel is not version dependent
-      - name: Install and configure Poetry
+      - name: Install and configure uv
         run: |
-          pip3 install poetry
-          poetry config virtualenvs.in-project true
+          pip3 install uv
       - name: Set up cache
-        uses: actions/cache@v3
-        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        id: cached-uv-dependencies
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/uv.lock') }}
       - name: Install dependencies
-        run: poetry install
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: uv sync --all-extras
+        if: steps.cached-uv-dependencies.outputs.cache-hit != 'true'
       - name: Build
-        run: poetry build
+        run: uv build
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -83,9 +86,11 @@ jobs:
     needs: [builder_teamtalk]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
@@ -95,5 +100,3 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           verbose: true
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}

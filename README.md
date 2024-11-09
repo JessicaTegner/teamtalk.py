@@ -27,7 +27,7 @@ pip install teamtalk.py
 ```bash
 git clone https://github.com/JessicaTegner/teamtalk.py
 cd teamtalk.py
-poetry install
+uv sync
 ```
 
 
@@ -55,6 +55,27 @@ bot.run()
 ## Documentation
 
 You can find the full documentation [here](http://teamtalkpy.readthedocs.io/en/latest)
+
+
+
+## Troubleshooting
+
+#### Erro when downloading the teamtalk sdk
+
+
+```
+Error: patoolib.util.PatoolError: could not find an executable program to extract format 7z; candidates are (7z,7za,7zr,unar),
+```
+
+Solution:
+
+```
+$ sudo apt install p7zip-full
+```
+
+Explanation:
+
+The error is caused by the fact that the `patool` library requires a program to extract 7z files. The error message lists the programs it tried to use, and the solution is to install one of them. In this case, `p7zip-full` is a good choice.
 
 
 ## Contributing

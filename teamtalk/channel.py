@@ -29,7 +29,7 @@ class Channel:
         elif isinstance(channel, sdk.Channel):
             self._channel = channel
             self.id = channel.nChannelID
-            self.channel_path = channel.szName
+            self.path = sdk.ttstr(self.teamtalk._get_channel_path(channel.nChannelID))
         self.server = self.teamtalk.server
 
     def update(self) -> bool:
@@ -70,7 +70,7 @@ class Channel:
         return True
 
     def _refresh(self) -> None:
-        self._channel, self.channel_path = self.teamtalk._get_channel_info(self.id)
+        self._channel, self.path = self.teamtalk._get_channel_info(self.id)
 
     def send_message(self, content: str, **kwargs) -> None:
         """Send a message to the channel.
@@ -92,7 +92,7 @@ class Channel:
         msg.nFromUserID = self.teamtalk.getMyUserID()
         msg.szFromUsername = self.teamtalk.getMyUserAccount().szUsername
         msg.nChannelID = self.id
-        msg.szMessage = content
+        msg.szMessage = sdk.ttstr(content)
         msg.bMore = False
         # get a pointer to our message
         self.teamtalk._send_message(msg, **kwargs)
@@ -198,10 +198,10 @@ class Channel:
             self.__dict__[name] = value
         else:
             # id cannot be change.
-            if name in ["teamtalk", "id", "server", "channel_path", "_channel"]:
+            if name in ["teamtalk", "id", "server", "path", "_channel"]:
                 self.__dict__[name] = value
             else:
-                _get_tt_obj_attribute(self.properties, name)
+                _get_tt_obj_attribute(self._channel, name)
                 # if we have gotten here, we can set the attribute
                 _set_tt_obj_attribute(self._channel, name, value)
 

@@ -27,6 +27,7 @@ from .tt_file import RemoteFile
 from .user import User as TeamTalkUser
 from .user_account import UserAccount as TeamTalkUserAccount
 from .user_account import BannedUserAccount as TeamTalkBannedUserAccount
+from .statistics import Statistics as TeamTalkServerStatistics
 
 
 _log = logging.getLogger(__name__)
@@ -68,7 +69,7 @@ class TeamTalkInstance(sdk.TeamTalk):
             sdk.ttstr(self.server_info.host),
             self.server_info.tcp_port,
             self.server_info.udp_port,
-            self.server_info.encrypted,
+            bEncrypted=self.server_info.encrypted,
         ):
             return False
         result, msg = _waitForEvent(self.super, sdk.ClientEvent.CLIENTEVENT_CON_SUCCESS)
@@ -125,7 +126,7 @@ class TeamTalkInstance(sdk.TeamTalk):
         Args:
             nickname: The new nickname.
         """
-        self.super.doChangeNickname(nickname)
+        self.super.doChangeNickname(sdk.ttstr(nickname))
 
     def change_status(self, status_mode: UserStatusMode, status_message: str):
         """Changes the status of the bot.
@@ -134,7 +135,7 @@ class TeamTalkInstance(sdk.TeamTalk):
             status_mode: The status mode.
             status_message: The status message.
         """
-        self.super.doChangeStatus(status_mode, status_message)
+        self.super.doChangeStatus(status_mode, sdk.ttstr(status_message))
 
     # permission stuff
     def has_permission(self, permission: Permission) -> bool:
@@ -233,7 +234,7 @@ class TeamTalkInstance(sdk.TeamTalk):
         Args:
             channel: The channel to join.
         """
-        self.super.doJoinChannelByID(channel.id, sdk.ttstr(channel.password))
+        self.super.doJoinChannelByID(channel.id, channel.password)
 
     def leave_channel(self):
         """Leaves the current channel."""
@@ -672,7 +673,7 @@ class TeamTalkInstance(sdk.TeamTalk):
             _log.debug(f"Kicking user {user} from channel {channel}")
             self._do_cmd(user, channel, "_DoKickUser")
         else:  # channel
-            if not self.has_permission(Permission.KICK_USERS_FROM_CHANNEL) or not sdk._IsChannelOperator(
+            if not self.has_permission(Permission.KICK_USERS_FROM_CHANNEL) and not sdk._IsChannelOperator(
                 self._tt, self.super.getMyUserID(), channel
             ):
                 raise PermissionError("You do not have permission to kick users from channels")
@@ -754,6 +755,25 @@ class TeamTalkInstance(sdk.TeamTalk):
         await asyncio.sleep(1)
         return self.banned_users
 
+    def get_server_statistics(self, timeout: int) -> TeamTalkServerStatistics:
+        """
+        Gets the statistics from the server.
+
+        Args:
+            timeout: The time to wait before assuming that getting the servers statistics failed.
+
+        Raises:
+            TimeoutError: If the server statistics are not received with in the given time.
+
+        returns:
+            The teamtalk.statistics object representing the servers statistics.
+        """
+        sdk._DoQueryServerStats(self._tt)
+        result, msg = _waitForEvent(self.super, sdk.ClientEvent.CLIENTEVENT_CMD_SERVERSTATISTICS, timeout)
+        if not result:
+            raise TimeoutError("The request for server statistics timed out.")
+        return TeamTalkServerStatistics(self, msg.serverstatistics)
+
     def _send_message(self, message: sdk.TextMessage, **kwargs):
         """Sends a message.
 
@@ -775,7 +795,7 @@ class TeamTalkInstance(sdk.TeamTalk):
 
     async def _process_events(self) -> None:  # noqa: C901
         """Processes events from the server. This is automatically called by teamtalk.Bot."""
-        msg = self.super.getMessage()
+        msg = self.super.getMessage(100)
         event = msg.nClientEvent
         if event == sdk.ClientEvent.CLIENTEVENT_USER_FIRSTVOICESTREAMPACKET:
             sdk._EnableAudioBlockEventEx(self._tt, msg.user.nUserID, sdk.StreamType.STREAMTYPE_VOICE, None, True)
@@ -847,7 +867,7 @@ class TeamTalkInstance(sdk.TeamTalk):
             self.bot.dispatch("server_update", self.server)
             return
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_SERVERSTATISTICS:
-            self.bot.dispatch("server_statistics", self.server)
+            self.bot.dispatch("server_statistics", TeamTalkServerStatistics(self, msg.serverstatistics))
             return
         # FILE EVENTS
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_FILE_NEW:
@@ -871,10 +891,24 @@ class TeamTalkInstance(sdk.TeamTalk):
             banned_user = TeamTalkBannedUserAccount(self, banned_user_struct)
             self.banned_users.append(banned_user)
             return
+        if event == sdk.ClientEvent.CLIENTEVENT_CON_LOST:
+            self.bot.dispatch("my_connection_lost", self)
+            return
+
+        else:
+            # if we haven't handled the event, log it
+            # except if it's CLIENTEVENT_CMD_PROCESSING or CLIENTEVENT_CMD_ERROR or CLIENTEVENT_CMD_SUCCESS
+            if event not in (
+                sdk.ClientEvent.CLIENTEVENT_CMD_PROCESSING,
+                sdk.ClientEvent.CLIENTEVENT_CMD_ERROR,
+                sdk.ClientEvent.CLIENTEVENT_CMD_SUCCESS,
+                sdk.ClientEvent.CLIENTEVENT_AUDIOINPUT,
+            ):
+                _log.warning(f"Unhandled event: {event}")
 
     def _get_channel_info(self, channel_id: int):
         _channel = self.getChannel(channel_id)
-        _channel_path = self.getChannelPath(channel_id)
+        _channel_path = sdk.ttstr(self.getChannelPath(channel_id))
         return _channel, _channel_path
 
     def _get_my_permissions(self):

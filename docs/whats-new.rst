@@ -16,9 +16,45 @@ This document holds a human-readable list of changes between releases.
 
     For more information on SemVer, please visit http://semver.org/.
 
-
-1.2.0 - Unreleased
+:version:`1.3.0` - Unreleased
 ---------------------------------
+
+Added
+~~~~~
+
+- Added server statistics support. See the new teamtalk.Statistics class for more information.
+
+Fixed
+~~~~~
+
+- Fixed various recursion errors when trying to get underlying SDK properties from a teamtalk.Channel.
+- Fixed PermissionError when trying to kick a user from a channel.
+- Fixed errors on linux with certain functions do to improper use of sdk.ttstr.
+
+:version:`1.2.1` - 2024-07-12
+---------------------------------
+
+This release adds the handling of the bot lost connection to the server event, a join_channel method to the teamtalk.Server class, an is_me function to the teamtalk.User class, and more descriptive error messages for the TT SDK Downloader, when failing to extract the sdk due to missing 7zip or equivalent.
+
+Added
+~~~~~
+
+- Added the handling of the bot lost connection to the server event.
+- Added a join_channel method to the teamtalk.Server class.
+- Added an is_me function to the teamtalk.User class.
+- Added more descriptive error messages for the TT SDK Downloader, when failing to extract the sdk due to missing 7zip or equivalent.
+
+Fixed
+~~~~~
+
+- Fixed a bug that would force debug logging to be enabled globally.
+
+
+
+:version:`1.2.0` - 2024-01-31
+---------------------------------
+
+This release adds subscriptions, and more expressive dir methods for Permissions, Channel Types and Server Properties, as well as fixing some long standing asyncio bugs. In addition, we also drop test compatibility for python 3.8, and we have updated to TeamTalk SDK 5.15
 
 Added
 ~~~~~
@@ -26,7 +62,11 @@ Added
 - Added support for subscriptions. You can now subscribe to events per user and get notified when they happen. You can also unsubscribe from events.
 - Added more expressive dir methods for Permissions, Channel Types and Server Properties. Now you can call dir(teamtalk.Permissions) and get a list of all permissions. Same for Channel Types and Server Properties.
 
+Changed / Fixed
+~~~~~~~~~~~~~~~
 
+- Updated to TeamTalk SDK 5.15
+- Fixed a bug where if a registered coroutine called asyncio.sleep, the entire event loop would freeze until a new event was received.
 
 :version:`1.1.0` - 2023-03-24
 ---------------------------------

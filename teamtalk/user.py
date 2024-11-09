@@ -41,6 +41,14 @@ class User:
         self.channel = self.teamtalk_instance.get_channel(self._user.nChannelID)
         self.server = self.channel.server
 
+    def is_me(self) -> bool:
+        """Checks if this user is the bot itself.
+
+        Returns:
+            True if this user is the bot itself, False otherwise.
+        """
+        return self.user_id == self.teamtalk_instance.getMyUserID()
+
     def send_message(self, content: str, **kwargs) -> int:
         """Sends a text message to this user.
 

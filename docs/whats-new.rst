@@ -23,6 +23,7 @@ Added
 ~~~~~
 
 - Added server statistics support. See the new teamtalk.Statistics class for more information.
+- Added audio receiving support, see the teamtalk.AudioBlock and teamtalk.MuxedAudioBlock classes for more information.
 
 Fixed
 ~~~~~

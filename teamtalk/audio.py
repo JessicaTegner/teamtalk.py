@@ -3,14 +3,19 @@
 Not to be confused with the underlying AudioBlock class, this is used in the "on_user_audio" event. # noqa
 
         Example
-        ---------
+        -------
 
         .. code-block:: python3
 
+            import pyaudio
+            streams: dict = {}
+            p = pyaudio.PyAudio
             @client.event
             async def on_user_audio(block):
-                print(block.user) # the teamtalk.User that the audio is from
-                print(block.data) # the audio data
+                print(block.user.username) # Print the username that the audio is from.
+                if block.user.id not in streams.keys(): streams [block.user.id] = p.open(format=pyaudio.paInt16, channels = block.channels, rate = block.sample_rate, output = True)
+                stream = streams[block.user.id]
+                stream.write(block.data) # Play the audio data.
                 # for more information, see the AudioBlock class
 
 

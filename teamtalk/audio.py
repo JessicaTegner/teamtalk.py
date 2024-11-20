@@ -9,7 +9,7 @@ Not to be confused with the underlying AudioBlock class, this is used in the "on
 
             import pyaudio
             streams: dict = {}
-            p = pyaudio.PyAudio
+            p = pyaudio.PyAudio()
             @client.event
             async def on_user_audio(block):
                 print(block.user.username) # Print the username that the audio is from.

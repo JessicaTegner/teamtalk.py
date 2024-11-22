@@ -5,3 +5,5 @@ on_server_update	teamtalk.Server	Called when a teamtalk.Server has updated its s
 on_server_statistics	teamtalk.Statistics	Called when a TeamTalk server sends it's statistics.
 on_file_new	teamtalk.RemoteFile	Called when a file has been uploaded to a channel.
 on_file_delete	teamtalk.RemoteFile	Called when a file has been deleted from a channel.
+on_muxed_audio	teamtalk.MuxedAudioBlock	called when a muxed audio block is recieved, this is used to get audio from all users in the channel at once.
+on_user_audio	teamtalk.AudioBlock	called when an audio block is recieved from a user, this is the audio for an individual user, not the hole server.

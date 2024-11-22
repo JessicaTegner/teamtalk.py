@@ -797,14 +797,20 @@ class TeamTalkInstance(sdk.TeamTalk):
         """Processes events from the server. This is automatically called by teamtalk.Bot."""
         msg = self.super.getMessage(100)
         event = msg.nClientEvent
-        if event == sdk.ClientEvent.CLIENTEVENT_USER_FIRSTVOICESTREAMPACKET:
-            sdk._EnableAudioBlockEventEx(self._tt, msg.user.nUserID, sdk.StreamType.STREAMTYPE_VOICE, None, True)
+        if event == sdk.ClientEvent.CLIENTEVENT_USER_STATECHANGE:
+            if msg.user.uUserState == 1:
+                sdk._EnableAudioBlockEventEx(self._tt, msg.user.nUserID, sdk.StreamType.STREAMTYPE_VOICE, None, True)
+            return
+            if msg.user.uUserState == 0:
+                sdk._EnableAudioBlockEventEx(self._tt, msg.user.nUserID, sdk.StreamType.STREAMTYPE_VOICE, None, False)
             return
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_USER_JOINED:
             if msg.user.nUserID == self.super.getMyUserID():
                 sdk._EnableAudioBlockEventEx(self._tt, sdk.TT_MUXED_USERID, sdk.StreamType.STREAMTYPE_VOICE, None, True)
             user = TeamTalkUser(self, msg.user)
             self.bot.dispatch("user_join", user, user.channel)
+            return
+        if event == sdk.ClientEvent.CLIENTEVENT_USER_FIRSTVOICESTREAMPACKET:
             return
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_USER_LEFT:
             if msg.user.nUserID == self.super.getMyUserID():
@@ -824,7 +830,10 @@ class TeamTalkInstance(sdk.TeamTalk):
             ab = _AcquireUserAudioBlock(self._tt, streamtype, msg.nSource)
             # put the ab which is a pointer into the sdk.AudioBlock
             ab2 = sdk.AudioBlock()
-            ctypes.memmove(ctypes.addressof(ab2), ab, ctypes.sizeof(ab2))
+            try:
+                ctypes.memmove(ctypes.addressof(ab2), ab, ctypes.sizeof(ab2))
+            except OSError:
+                return
             if msg.nSource == sdk.TT_MUXED_USERID:
                 real_ab = MuxedAudioBlock(ab2)
                 self.bot.dispatch("muxed_audio", real_ab)

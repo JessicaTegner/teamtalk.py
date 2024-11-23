@@ -16,14 +16,17 @@ This document holds a human-readable list of changes between releases.
 
     For more information on SemVer, please visit http://semver.org/.
 
-:version:`1.3.0` - Unreleased
+:version:`1.3.0` - 2024-11-23
 ---------------------------------
+
+This release adds audio receiving support through the on_user_audio and on_muxed_audio event. It also adds server statistics support through the teamtalk.Statistics class. In addition, we now do not ignore the first 1 second of events, and we have fixed various recursion errors when trying to get underlying SDK properties from a teamtalk.Channel. We have also fixed a PermissionError when trying to kick a user from a channel, and errors on linux with certain functions due to improper use of sdk.ttstr.
 
 Added
 ~~~~~
 
 - Added server statistics support. See the new teamtalk.Statistics class for more information.
 - Added audio receiving support, see the teamtalk.AudioBlock and teamtalk.MuxedAudioBlock classes for more information.
+- Added so we now do not ignore the first 1 second of events.
 
 Fixed
 ~~~~~

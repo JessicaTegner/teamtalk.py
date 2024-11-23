@@ -14,6 +14,7 @@ import requests
 from . import downloader
 
 url = "https://bearware.dk/teamtalksdk"
+VERSION_IDENTIFIER = "5.15"
 
 cd = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -48,9 +49,9 @@ def download() -> None:
     # check status code
     r.raise_for_status()
     page = bs4.BeautifulSoup(r.text, features="html.parser")
-    # The last tested version series is v5.12x
+    # The last tested version series is v5.15x
     versions = page.find_all("li")
-    version = [i for i in versions if "5.15" in i.text][-1].a.get("href")[0:-1]
+    version = [i for i in versions if VERSION_IDENTIFIER in i.text][-1].a.get("href")[0:-1]
     download_url = url + "/" + version + "/" + "tt5sdk_{v}_{p}.7z".format(v=version, p=get_url_suffix_from_platform())
     print("Downloading from " + download_url)
     downloader.download_file(download_url, os.path.join(cd, "ttsdk.7z"))

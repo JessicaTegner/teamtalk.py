@@ -121,7 +121,15 @@ def install() -> None:
         sys.exit(1)
     print("Extracted. moving")
     move()
+    # check if the move was successful
+    if not os.path.exists(os.path.join(cd, "implementation", "TeamTalk_DLL")):
+        print("Failed to move TeamTalk_DLL")
+        sys.exit(1)
+    if not os.path.exists(os.path.join(cd, "implementation", "TeamTalkPy")):
+        print("Failed to move TeamTalkPy")
+        sys.exit(1)
     print("moved. cleaning")
     clean()
     print("cleaned.")
     print("Installed")
+    sys.exit(0)

@@ -12,7 +12,7 @@ import time
 import ctypes
 from typing import List, Union
 
-from ._utils import _getAbsTimeDiff, _waitForEvent, _waitForCmd, _do_after
+from ._utils import _waitForEvent, _waitForCmd, _do_after
 from .channel import Channel as TeamTalkChannel
 from .channel import ChannelType
 from .enums import TeamTalkServerInfo, UserStatusMode, UserType
@@ -817,10 +817,6 @@ class TeamTalkInstance(sdk.TeamTalk):
                 sdk._EnableAudioBlockEventEx(self._tt, sdk.TT_MUXED_USERID, sdk.StreamType.STREAMTYPE_VOICE, None, False)
             user = TeamTalkUser(self, msg.user)
             self.bot.dispatch("user_left", user, TeamTalkChannel(self, msg.nSource))
-            return
-        if event != sdk.ClientEvent.CLIENTEVENT_NONE and _getAbsTimeDiff(self.init_time, time.time()) < 1000:
-            # done so we don't get random events when logging in
-            print(f"Ignoring event {event}")
             return
         if event == sdk.ClientEvent.CLIENTEVENT_NONE:
             return

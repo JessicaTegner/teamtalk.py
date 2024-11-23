@@ -29,7 +29,7 @@ class Channel:
         elif isinstance(channel, sdk.Channel):
             self._channel = channel
             self.id = channel.nChannelID
-            self.path = sdk.ttstr(self.teamtalk._get_channel_path(channel.nChannelID))
+            self._channel, self.path = self.teamtalk._get_channel_info(self.id)
         self.server = self.teamtalk.server
 
     def update(self) -> bool:

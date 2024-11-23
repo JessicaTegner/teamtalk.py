@@ -31,10 +31,8 @@ The above code will print the message object to the console whenever a message i
 Missellaneous Events
 -----------------------
 
-
-.. csv-table:: Missellaneous Events
+.. csv-table:: Miscellaneous Events
    :delim: \u0009
-   :header: "name", "Argument(s)", "Description"
    :file: _static/csv/miss.csv
 
 
@@ -43,7 +41,6 @@ Bot Events
 
 .. csv-table:: Bot Events
    :delim: \u0009
-   :header: "name", "Argument(s)", "Description"
    :file: _static/csv/bot.csv
 
 Server, Channel & File Events
@@ -51,7 +48,6 @@ Server, Channel & File Events
 
 .. csv-table:: Server, Channel & File Events
    :delim: \u0009
-   :header: "name", "Argument(s)", "Description"
    :file: _static/csv/server_channel_n_file.csv
 
 
@@ -60,5 +56,4 @@ User Events
 
 .. csv-table:: User Events
    :delim: \u0009
-   :header: "name", "Argument(s)", "Description"
    :file: _static/csv/user.csv

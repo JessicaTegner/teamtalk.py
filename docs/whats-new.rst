@@ -16,6 +16,14 @@ This document holds a human-readable list of changes between releases.
 
     For more information on SemVer, please visit http://semver.org/.
 
+:version:`2.0.0` - Unreleased
+---------------------------------
+
+Fixed
+~~~~~
+
+- Fixed documentation not being generated correctly.
+
 :version:`1.3.0` - 2024-11-23
 ---------------------------------
 

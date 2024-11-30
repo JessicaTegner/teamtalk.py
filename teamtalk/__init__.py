@@ -1,7 +1,7 @@
 # if the implementation can't be found. Try to download it
 # from the internet and install it.
 
-# first add our to be implmentation/TeamTalk_DLL to the path
+# first add our to be implementation/TeamTalk_DLL to the path
 import os
 import sys
 

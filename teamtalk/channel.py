@@ -24,13 +24,15 @@ class Channel:
         # if the channel_id is a int, set it to the channel_id
         if isinstance(channel, int):
             self.id = channel
-            self._refresh()
+            self._channel, self.path = self.teamtalk._get_channel_info(self.id)
+
         # if the channel is a sdk.Channel, set it to self._channel
         elif isinstance(channel, sdk.Channel):
             self._channel = channel
             self.id = channel.nChannelID
             self._channel, self.path = self.teamtalk._get_channel_info(self.id)
         self.server = self.teamtalk.server
+
 
     def update(self) -> bool:
         """Update the channel information.

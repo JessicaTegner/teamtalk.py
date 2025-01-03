@@ -33,7 +33,6 @@ class Channel:
             self._channel, self.path = self.teamtalk._get_channel_info(self.id)
         self.server = self.teamtalk.server
 
-
     def update(self) -> bool:
         """Update the channel information.
 

@@ -1,4 +1,5 @@
 """Server statistics module for Teamtalk."""
+
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
 from ._utils import _get_tt_obj_attribute
 

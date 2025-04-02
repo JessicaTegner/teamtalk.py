@@ -820,26 +820,26 @@ class TeamTalkInstance(sdk.TeamTalk):
             return
         if event == sdk.ClientEvent.CLIENTEVENT_NONE:
             return
-        if event == sdk.ClientEvent.CLIENTEVENT_USER_AUDIOBLOCK:
-            # this one is a little special
-            streamtype = sdk.StreamType(msg.nStreamType)
-            ab = _AcquireUserAudioBlock(self._tt, streamtype, msg.nSource)
-            # put the ab which is a pointer into the sdk.AudioBlock
-            ab2 = sdk.AudioBlock()
-            try:
-                ctypes.memmove(ctypes.addressof(ab2), ab, ctypes.sizeof(ab2))
-            except OSError:
-                return
-            if msg.nSource == sdk.TT_MUXED_USERID:
-                real_ab = MuxedAudioBlock(ab2)
-                self.bot.dispatch("muxed_audio", real_ab)
-            else:
-                user = TeamTalkUser(self, msg.nSource)
-                real_ab = AudioBlock(user, ab2)
-                self.bot.dispatch("user_audio", real_ab)
-            # release
-            _ReleaseUserAudioBlock(self._tt, ab)
-            return
+#        if event == sdk.ClientEvent.CLIENTEVENT_USER_AUDIOBLOCK:
+#            # this one is a little special
+#            streamtype = sdk.StreamType(msg.nStreamType)
+#            ab = _AcquireUserAudioBlock(self._tt, streamtype, msg.nSource)
+#            # put the ab which is a pointer into the sdk.AudioBlock
+#            ab2 = sdk.AudioBlock()
+#            try:
+#                ctypes.memmove(ctypes.addressof(ab2), ab, ctypes.sizeof(ab2))
+#            except OSError:
+#                return
+#            if msg.nSource == sdk.TT_MUXED_USERID:
+#                real_ab = MuxedAudioBlock(ab2)
+#                self.bot.dispatch("muxed_audio", real_ab)
+#            else:
+#                user = TeamTalkUser(self, msg.nSource)
+#                real_ab = AudioBlock(user, ab2)
+#                self.bot.dispatch("user_audio", real_ab)
+#            # release
+#            _ReleaseUserAudioBlock(self._tt, ab)
+#            return
         if event == sdk.ClientEvent.CLIENTEVENT_CMD_USER_TEXTMSG:
             message = None
             if msg.textmessage.nMsgType == sdk.TextMsgType.MSGTYPE_USER:

@@ -1,6 +1,5 @@
 """This module contains the Message class and its subclasses."""
 
-
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
 
 

@@ -18,7 +18,8 @@ from .channel import ChannelType
 from .enums import TeamTalkServerInfo, UserStatusMode, UserType
 from .exceptions import PermissionError
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
-#from .audio import AudioBlock, MuxedAudioBlock, _AcquireUserAudioBlock, _ReleaseUserAudioBlock
+
+# from .audio import AudioBlock, MuxedAudioBlock, _AcquireUserAudioBlock, _ReleaseUserAudioBlock
 from .message import BroadcastMessage, ChannelMessage, CustomMessage, DirectMessage
 from .subscription import Subscription
 from .permission import Permission

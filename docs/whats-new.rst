@@ -24,6 +24,13 @@ Fixed
 
 - Fixed documentation not being generated correctly.
 
+:version:`3.0.1` - 2025-04-12
+---------------------------------
+
+Removed
+~~~~~~~
+- Temporarily removed audio receiving event.
+
 :version:`1.3.0` - 2024-11-23
 ---------------------------------
 

@@ -1,6 +1,11 @@
 name: Continuous Integration
 
-on: [push, pull_request]
+on:
+  # Run tests for every push and PR
+  push:
+    branches: ["**"]      # any branch
+    tags:     ["v*"]      # version tags like v1.2.3
+  pull_request:
 
 defaults:
   run:
@@ -11,6 +16,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  #################################################################
+  # 1. TEST SUITE
+  #################################################################
   test:
     strategy:
       fail-fast: false
@@ -21,86 +29,119 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
       - name: Install system dependencies (Ubuntu)
         if: startsWith(matrix.os, 'ubuntu')
         run: |
           sudo apt-get update
           sudo apt-get install -y libpulse0
-      - name: Set up python
+
+      - name: Set up Python
         id: setup-python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Print Python Information
+
+      - name: Print Python information
         run: python -VV
+
       - name: Install and configure uv
-        run: |
-          pip3 install uv
-      - name: Set up cache
+        run: pip install uv
+
+      - name: Restore venv cache
         uses: actions/cache@v4
         id: cached-uv-dependencies
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/uv.lock') }}
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/uv.lock') }}
+
       - name: Install dependencies
-        run: uv sync --all-extras
         if: steps.cached-uv-dependencies.outputs.cache-hit != 'true'
+        run: uv sync --all-extras
+
       - name: Download TeamTalk SDK
         run: uv run python -c "import teamtalk"
-      - name: run linting
+
+      - name: Run linting
         run: uv run pre-commit run --all-files
 
+
+
+  #################################################################
+  # 2. BUILD WHEEL (non–OS‑specific wheel, any single Python version)
+  #################################################################
   builder_teamtalk:
     needs: [test]
-    # only run on master branch
-    if: github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest  # Any OS is fine as this wheel is not OS dependent
+    runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Set up python
+
+      - name: Set up Python
         id: setup-python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.9  # Build any 1 python version as this wheel is not version dependent
+          python-version: "3.9"   # wheel is Py‑version‑agnostic
+
       - name: Install and configure uv
-        run: |
-          pip3 install uv
-      - name: Set up cache
+        run: pip install uv
+
+      - name: Restore venv cache
         uses: actions/cache@v4
         id: cached-uv-dependencies
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/uv.lock') }}
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/uv.lock') }}
+
       - name: Install dependencies
-        run: uv sync --all-extras
         if: steps.cached-uv-dependencies.outputs.cache-hit != 'true'
-      - name: Build
+        run: uv sync --all-extras
+
+      - name: Build wheel
         run: uv build
-      - name: Upload artifacts
+
+      - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-package-distributions
           path: dist/
           retention-days: 1
 
+
+
+  #################################################################
+  # 3. PUBLISH TO PyPI (only on version tags *already merged* to master)
+  #################################################################
   publisher_release:
     needs: [builder_teamtalk]
-    # If the commit is tagged with a version number, we will publish the package to PyPI
-    if: startsWith(github.ref, 'refs/tags/v')
-    # if we are on the main branch, we will publish the package to PyPI
+
+    # Run only on tag push events whose ref starts with refs/tags/v…
+    if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
+      id-token: write   # for trusted publishing
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Download artifacts
+
+      # Ensure the tag’s commit is contained in the current master branch.
+      # If not, exit with status 1 to abort the job.
+      - name: Verify tag commit is on master
+        run: |
+          git fetch origin master
+          git merge-base --is-ancestor $GITHUB_SHA origin/master || {
+            echo "::error::Tagged commit is not on master. Aborting release.";
+            exit 1;
+          }
+
+      - name: Download wheel artifact
         uses: actions/download-artifact@v4
         with:
           name: python-package-distributions
           path: dist/
-      - name: Publish  to PyPI
+
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           verbose: true

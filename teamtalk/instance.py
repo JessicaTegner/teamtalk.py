@@ -19,7 +19,6 @@ from .channel import Channel as TeamTalkChannel
 from .channel import ChannelType
 from .device import SoundDevice
 from .enums import TeamTalkServerInfo, UserStatusMode, UserType
-from .exceptions import PermissionError, TeamTalkException
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
 from .message import BroadcastMessage, ChannelMessage, CustomMessage, DirectMessage
 from .permission import Permission

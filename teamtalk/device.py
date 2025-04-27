@@ -59,10 +59,10 @@ class SoundDevice:
         return self._device_struct.nMaxOutputChannels > 0
 
     def __repr__(self) -> str:
-        """Returns a string representation of the device.
+        """Return a developer-friendly string representation of the device.
 
         Returns:
-            A developer-friendly string representation.
+            str: A string representation of the SoundDevice instance.
         """
         input_output = []
         if self.is_input:

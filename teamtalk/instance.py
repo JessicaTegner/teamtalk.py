@@ -187,8 +187,6 @@ class TeamTalkInstance(sdk.TeamTalk):
 
         Accepts a specific device ID (int) or the string "default" to use the
         system default input device.
-
-        Uses the parent class's methods.
         Updates the stored current input device ID on success.
 
         Args:
@@ -244,8 +242,6 @@ class TeamTalkInstance(sdk.TeamTalk):
     def enable_voice_transmission(self, enabled: bool) -> bool:
         """Enables or disables voice transmission state for this instance.
 
-        Uses the parent class's enableVoiceTransmission method.
-
         Args:
             enabled: True to enable voice transmission, False to disable it.
 
@@ -278,22 +274,23 @@ class TeamTalkInstance(sdk.TeamTalk):
     def set_input_volume(self, volume: int) -> bool:
         """Sets the input sound gain level using a 0-100 scale.
 
-        Calls low-level TT_SetSoundInputGainLevel as no wrapper exists in parent class.
-        Validates input, scales it to the SDK's range (0-32000).
+        Uses a simple linear scale (volume * 20) where 50% maps to 1000 SDK gain.
 
         Args:
-            volume: The desired volume level from 0 to 100.
+            volume: The desired volume level (0-100 recommended).
 
         Returns:
             True on success, False otherwise.
 
         Raises:
-            ValueError: If volume is outside the 0-100 range.
+            ValueError: If volume is less than 0.
         """
-        if not 0 <= volume <= 100:
-            raise ValueError("Volume must be between 0 and 100.")
-        sdk_gain = int(volume * 320.0)
-        sdk_gain = min(sdk_gain, 32000)
+        if volume < 0:
+            raise ValueError("Volume must be non-negative.")
+
+        sdk_gain = int(volume * 20.0)
+        sdk_gain = max(0, min(sdk_gain, 32000))
+
         _log.debug(f"Setting input volume for instance {self.server_info.host} to {volume}% (SDK level: {sdk_gain})")
         success = sdk._SetSoundInputGainLevel(self._tt, sdk_gain)
         if not success:

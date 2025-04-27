@@ -258,18 +258,18 @@ class TeamTalkInstance(sdk.TeamTalk):
     def get_input_volume(self) -> int:
         """Gets the current input sound gain level (scaled 0-100).
 
-        Calls low-level TT_GetSoundInputGainLevel as no wrapper exists in parent class.
-        Scales the result from the SDK's range (0-32000) to 0-100 range.
+        Reads the SDK gain and scales it via (sdk_gain / 20).
 
         Returns:
-            The volume level from 0 to 100. Returns 0 if the SDK call fails.
+            The volume level (0-100 scale, potentially higher).
         """
         sdk_gain = sdk._GetSoundInputGainLevel(self._tt)
         if sdk_gain < 0:
             _log.warning(f"Could not get input gain for instance {self.server_info.host}, SDK returned {sdk_gain}")
             return 0
-        scaled_volume = round(sdk_gain / 320.0)
-        return max(0, min(100, scaled_volume))
+
+        scaled_volume = round(sdk_gain / 20.0)
+        return max(0, scaled_volume)
 
     def set_input_volume(self, volume: int) -> bool:
         """Sets the input sound gain level using a 0-100 scale.

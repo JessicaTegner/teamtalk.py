@@ -172,7 +172,7 @@ class TeamTalkInstance(sdk.TeamTalk):
         Returns:
             The ID of the current input device, or -1 if not set or unknown.
         """
-        return self._current_input_device_id # Эта строка должна быть с отступом!
+        return self._current_input_device_id
 
     def set_input_device(self, device_id: int) -> bool:
         """Sets and initializes the input device for this instance.

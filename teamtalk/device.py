@@ -2,6 +2,7 @@
 
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
 
+
 class SoundDevice:
     """Represents a sound device available in TeamTalk."""
 
@@ -33,12 +34,12 @@ class SoundDevice:
 
     @property
     def sound_system(self) -> int:
-         """Gets the sound system ID (e.g., WASAPI, ALSA).
+        """Gets the sound system ID (e.g., WASAPI, ALSA).
 
-         Returns:
-            The integer ID of the sound system.
-         """
-         return self._device_struct.nSoundSystem
+        Returns:
+           The integer ID of the sound system.
+        """
+        return self._device_struct.nSoundSystem
 
     @property
     def is_input(self) -> bool:

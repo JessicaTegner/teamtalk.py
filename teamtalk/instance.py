@@ -13,6 +13,7 @@ import time
 from typing import List, Optional, Union
 
 from ._utils import _waitForCmd, _waitForEvent, _do_after
+
 # from .audio import AudioBlock, MuxedAudioBlock, _AcquireUserAudioBlock, _ReleaseUserAudioBlock
 from .channel import Channel as TeamTalkChannel
 from .channel import ChannelType
@@ -215,7 +216,7 @@ class TeamTalkInstance(sdk.TeamTalk):
         _log.debug(f"{action} voice transmission for instance {self.server_info.host}")
         success = sdk._EnableVoiceTransmission(self._tt, enabled)
         if not success:
-             _log.error(f"Failed to {action.lower()} voice transmission for instance {self.server_info.host}")
+            _log.error(f"Failed to {action.lower()} voice transmission for instance {self.server_info.host}")
         return success
 
     def get_input_volume(self) -> int:
@@ -229,8 +230,8 @@ class TeamTalkInstance(sdk.TeamTalk):
         """
         sdk_gain = sdk._GetSoundInputGainLevel(self._tt)
         if sdk_gain < 0:
-             _log.warning(f"Could not get input gain for instance {self.server_info.host}, SDK returned {sdk_gain}")
-             return 0
+            _log.warning(f"Could not get input gain for instance {self.server_info.host}, SDK returned {sdk_gain}")
+            return 0
         scaled_volume = round(sdk_gain / 320.0)
         return max(0, min(100, scaled_volume))
 
@@ -256,7 +257,7 @@ class TeamTalkInstance(sdk.TeamTalk):
         _log.debug(f"Setting input volume for instance {self.server_info.host} to {volume}% (SDK level: {sdk_gain})")
         success = sdk._SetSoundInputGainLevel(self._tt, sdk_gain)
         if not success:
-             _log.error(f"Failed to set input volume for instance {self.server_info.host}")
+            _log.error(f"Failed to set input volume for instance {self.server_info.host}")
         return success
 
     # permission stuff

@@ -103,8 +103,8 @@ class TeamTalkInstance(sdk.TeamTalk):
             return False
         self.bot.dispatch("my_login", self.server)
         self.logged_in = True
-        self.super.initSoundInputDevice(1978)
-        self.super.initSoundOutputDevice(1978)
+        #        self.super.initSoundInputDevice(1978)
+        #        self.super.initSoundOutputDevice(1978)
         if join_channel_on_login:
             channel_id = self.server_info.join_channel_id
             if channel_id < 1:
@@ -148,7 +148,6 @@ class TeamTalkInstance(sdk.TeamTalk):
             Returns an empty list if the SDK call fails.
         """
         default_in_id = -1
-        #        default_out_id = -1
         try:
             defaults = self.super.getDefaultSoundDevices()
             if defaults:
@@ -228,8 +227,8 @@ class TeamTalkInstance(sdk.TeamTalk):
                 raise ValueError("Input must be int ID or 'default'")
 
         _log.debug(f"Setting input device for instance {self.server_info.host} to ID: {target_device_id}")
-        self.super.closeSoundInputDevice()
-        success = self.super.initSoundInputDevice(target_device_id)
+        sdk._CloseSoundInputDevice(self._tt)
+        success = sdk._InitSoundInputDevice(self._tt, target_device_id)
 
         if success:
             self._current_input_device_id = target_device_id

@@ -36,7 +36,7 @@ class SoundDevice:
         try:
             value = _get_tt_obj_attribute(self._device_struct, name)
             if isinstance(value, (bytes, sdk.TTCHAR, sdk.TTCHAR_P)):
-                 return sdk.ttstr(value)
+                return sdk.ttstr(value)
             return value
         except AttributeError:
             raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
@@ -60,17 +60,17 @@ class SoundDevice:
         default_marker = " (Default)" if self.is_default_input else ""
         try:
             if _get_tt_obj_attribute(self._device_struct, 'max_input_channels') > 0:
-                 input_output.append("Input")
+                input_output.append("Input")
             if _get_tt_obj_attribute(self._device_struct, 'max_output_channels') > 0:
-                 input_output.append("Output")
+                input_output.append("Output")
         except AttributeError:
-             pass
+            pass
         type_str = "/".join(input_output)
         try:
             _id = self.id
             _name = self.name
             return f"SoundDevice(id={_id}, name='{_name}{default_marker}', type='{type_str}')"
         except AttributeError:
-             _id_fallback = getattr(self._device_struct, 'nDeviceID', 'N/A')
-             _name_fallback = sdk.ttstr(getattr(self._device_struct, 'szDeviceName', 'N/A'))
-             return f"SoundDevice(id={_id_fallback}, name='{_name_fallback}{default_marker}', type='{type_str}')"
+            _id_fallback = getattr(self._device_struct, 'nDeviceID', 'N/A')
+            _name_fallback = sdk.ttstr(getattr(self._device_struct, 'szDeviceName', 'N/A'))
+            return f"SoundDevice(id={_id_fallback}, name='{_name_fallback}{default_marker}', type='{type_str}')"

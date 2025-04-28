@@ -6,29 +6,30 @@ In addition, it's also here that events are dispatched.
 """
 
 import asyncio
-import os
-import logging
-import time
 import ctypes
-from typing import List, Union
+import logging
+import os
+import time
+from typing import List, Optional, Union
 
-from ._utils import _waitForEvent, _waitForCmd, _do_after
+from ._utils import _waitForCmd, _waitForEvent, _do_after
+
+# from .audio import AudioBlock, MuxedAudioBlock, _AcquireUserAudioBlock, _ReleaseUserAudioBlock
 from .channel import Channel as TeamTalkChannel
 from .channel import ChannelType
+from .device import SoundDevice
 from .enums import TeamTalkServerInfo, UserStatusMode, UserType
 from .exceptions import PermissionError
 from .implementation.TeamTalkPy import TeamTalk5 as sdk
-
-# from .audio import AudioBlock, MuxedAudioBlock, _AcquireUserAudioBlock, _ReleaseUserAudioBlock
 from .message import BroadcastMessage, ChannelMessage, CustomMessage, DirectMessage
-from .subscription import Subscription
 from .permission import Permission
 from .server import Server as TeamTalkServer
+from .statistics import Statistics as TeamTalkServerStatistics
+from .subscription import Subscription
 from .tt_file import RemoteFile
 from .user import User as TeamTalkUser
-from .user_account import UserAccount as TeamTalkUserAccount
 from .user_account import BannedUserAccount as TeamTalkBannedUserAccount
-from .statistics import Statistics as TeamTalkServerStatistics
+from .user_account import UserAccount as TeamTalkUserAccount
 
 
 _log = logging.getLogger(__name__)
@@ -59,6 +60,7 @@ class TeamTalkInstance(sdk.TeamTalk):
         self.init_time = time.time()
         self.user_accounts = []
         self.banned_users = []
+        self._current_input_device_id: Optional[int] = -1
 
     def connect(self) -> bool:
         """Connects to the server. This doesn't return until the connection is successful or fails.
@@ -101,8 +103,8 @@ class TeamTalkInstance(sdk.TeamTalk):
             return False
         self.bot.dispatch("my_login", self.server)
         self.logged_in = True
-        self.super.initSoundInputDevice(1978)
-        self.super.initSoundOutputDevice(1978)
+        #        self.super.initSoundInputDevice(1978)
+        #        self.super.initSoundOutputDevice(1978)
         if join_channel_on_login:
             channel_id = self.server_info.join_channel_id
             if channel_id < 1:
@@ -137,6 +139,162 @@ class TeamTalkInstance(sdk.TeamTalk):
             status_message: The status message.
         """
         self.super.doChangeStatus(status_mode, sdk.ttstr(status_message))
+
+    def get_sound_devices(self) -> List[SoundDevice]:
+        """Gets the list of available TeamTalk sound devices, marking the default input.
+
+        Returns:
+            A list of SoundDevice objects representing the available devices.
+            Returns an empty list if the SDK call fails.
+        """
+        default_in_id = -1
+        try:
+            defaults = self.super.getDefaultSoundDevices()
+            if defaults:
+                if isinstance(defaults, (tuple, list)) and len(defaults) == 2:
+                    default_in_id, _ = defaults
+                else:
+                    _log.warning(f"Unexpected return type from getDefaultSoundDevices: {type(defaults)}")
+            else:
+                _log.warning(f"Call to getDefaultSoundDevices returned None or False for instance {self.server_info.host}")
+        except Exception as e:
+            _log.exception(f"Error getting default sound devices for instance {self.server_info.host}: {e}")
+
+        sdk_devices = self.super.getSoundDevices()
+        if not sdk_devices:
+            _log.warning(f"Failed to get sound device list via superclass for instance {self.server_info.host}")
+            return []
+
+        devices = [SoundDevice(dev, is_default_input=(dev.nDeviceID == default_in_id)) for dev in sdk_devices]
+        return devices
+
+    def get_current_input_device_id(self) -> Optional[int]:
+        """Gets the ID of the currently active input device for this instance.
+
+        Note:
+            This returns the ID that was stored when the input device was
+            last initialized or set for this instance using set_input_device.
+            It does not query the SDK directly for the current device.
+
+        Returns:
+            The ID of the current input device, or -1 if not set or unknown.
+        """
+        return self._current_input_device_id
+
+    def set_input_device(self, device_id_or_name: Union[int, str]) -> bool:
+        """Sets and initializes the input device for this instance.
+
+        Accepts a specific device ID (int) or the string "default" to use the
+        system default input device.
+        Updates the stored current input device ID on success.
+
+        Args:
+            device_id_or_name: The ID (int) of the device or the string "default".
+
+        Returns:
+            True on success, False on initialization failure or if default not found.
+
+        Raises:
+            ValueError: If the input is not a valid integer or "default".
+        """
+        target_device_id = -1
+
+        if isinstance(device_id_or_name, str) and device_id_or_name.lower() == "default":
+            _log.debug(f"Attempting to set default input device for instance {self.server_info.host}")
+            try:
+                defaults = self.super.getDefaultSoundDevices()
+                if defaults and isinstance(defaults, (tuple, list)) and len(defaults) == 2:
+                    target_device_id = defaults[0]
+                    if target_device_id < 0:
+                        _log.error(
+                            f"System returned invalid default input device ID ({target_device_id}) "
+                            f"for instance {self.server_info.host}"
+                        )
+                        return False
+                    _log.info(f"Resolved 'default' to input device ID: {target_device_id}")
+                else:
+                    _log.error(f"Could not determine default input device for instance {self.server_info.host}")
+                    return False
+            except Exception as e:
+                _log.exception(f"Error getting default sound devices when setting 'default': {e}")
+                return False
+        else:
+            try:
+                target_device_id = int(device_id_or_name)
+            except ValueError:
+                raise ValueError("Input must be int ID or 'default'")
+            except TypeError:
+                raise ValueError("Input must be int ID or 'default'")
+
+        _log.debug(f"Setting input device for instance {self.server_info.host} to ID: {target_device_id}")
+        sdk._CloseSoundInputDevice(self._tt)
+        success = sdk._InitSoundInputDevice(self._tt, target_device_id)
+
+        if success:
+            self._current_input_device_id = target_device_id
+            _log.info(f"Successfully set input device for instance {self.server_info.host} to ID: {target_device_id}")
+        else:
+            self._current_input_device_id = -1
+            _log.error(f"Failed to set input device for instance {self.server_info.host} to ID: {target_device_id}")
+        return success
+
+    def enable_voice_transmission(self, enabled: bool) -> bool:
+        """Enables or disables voice transmission state for this instance.
+
+        Args:
+            enabled: True to enable voice transmission, False to disable it.
+
+        Returns:
+            True if the SDK call was successful, False otherwise.
+        """
+        action = "Enabling" if enabled else "Disabling"
+        _log.debug(f"{action} voice transmission for instance {self.server_info.host}")
+        success = self.super.enableVoiceTransmission(enabled)
+        if not success:
+            _log.error(f"Failed to {action.lower()} voice transmission for instance {self.server_info.host}")
+        return success
+
+    def get_input_volume(self) -> int:
+        """Gets the current input sound gain level (scaled 0-100).
+
+        Reads the SDK gain and scales it via (sdk_gain / 20).
+
+        Returns:
+            The volume level (0-100 scale, potentially higher).
+        """
+        sdk_gain = sdk._GetSoundInputGainLevel(self._tt)
+        if sdk_gain < 0:
+            _log.warning(f"Could not get input gain for instance {self.server_info.host}, SDK returned {sdk_gain}")
+            return 0
+
+        scaled_volume = round(sdk_gain / 20.0)
+        return max(0, scaled_volume)
+
+    def set_input_volume(self, volume: int) -> bool:
+        """Sets the input sound gain level using a 0-100 scale.
+
+        Uses a simple linear scale (volume * 20) where 50% maps to 1000 SDK gain.
+
+        Args:
+            volume: The desired volume level (0-100 recommended).
+
+        Returns:
+            True on success, False otherwise.
+
+        Raises:
+            ValueError: If volume is less than 0.
+        """
+        if volume < 0:
+            raise ValueError("Volume must be non-negative.")
+
+        sdk_gain = int(volume * 20.0)
+        sdk_gain = max(0, min(sdk_gain, 32000))
+
+        _log.debug(f"Setting input volume for instance {self.server_info.host} to {volume}% (SDK level: {sdk_gain})")
+        success = sdk._SetSoundInputGainLevel(self._tt, sdk_gain)
+        if not success:
+            _log.error(f"Failed to set input volume for instance {self.server_info.host}")
+        return success
 
     # permission stuff
     def has_permission(self, permission: Permission) -> bool:

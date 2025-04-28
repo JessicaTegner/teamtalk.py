@@ -24,6 +24,18 @@ Fixed
 
 - Fixed documentation not being generated correctly.
 
+:version:`1.4.0` - 2025-04-28
+---------------------------------
+
+Added new capabilities for managing audio input devices and settings.
+
+Added
+~~~~~
+
+- Added the ability to list available sound devices and select the desired input device.
+- Added functions to get and set the microphone input gain level.
+- Added control to enable or disable voice transmission.
+
 :version:`1.3.1` - 2025-04-12
 ---------------------------------
 

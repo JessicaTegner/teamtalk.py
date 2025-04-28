@@ -24,6 +24,21 @@ Fixed
 
 - Fixed documentation not being generated correctly.
 
+:version:`1.4.0` - 2025-04-28
+---------------------------------
+
+Added new functions for managing audio input devices and settings.
+
+Added
+~~~~~
+
+* **`teamtalk.TeamTalkInstance.enable_voice_transmission()`:** Enable (pass `True`) or disable (pass `False`) transmitting voice to the channel.
+* **`teamtalk.TeamTalkInstance.get_current_input_device_id()`:** Get the ID of the currently initialized input device for this instance.
+* **`teamtalk.TeamTalkInstance.get_input_volume()`:** Get the current microphone input gain level.
+* **`teamtalk.TeamTalkInstance.get_sound_devices()`:** Get a list of available sound input and output devices.
+* **`teamtalk.TeamTalkInstance.set_input_device()`:** Select and initialize the audio input device to use.
+* **`teamtalk.TeamTalkInstance.set_input_volume()`:** Set the microphone input gain level.
+
 :version:`1.3.1` - 2025-04-12
 ---------------------------------
 

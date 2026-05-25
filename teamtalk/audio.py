@@ -30,7 +30,6 @@ from .implementation.TeamTalkPy import TeamTalk5 as sdk
 
 from ._utils import _get_tt_obj_attribute
 
-
 _AcquireUserAudioBlock = sdk.function_factory(
     sdk.dll.TT_AcquireUserAudioBlock, [sdk.POINTER(sdk.AudioBlock), [sdk._TTInstance, sdk.StreamType, sdk.INT32]]
 )

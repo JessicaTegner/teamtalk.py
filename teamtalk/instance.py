@@ -31,7 +31,6 @@ from .user import User as TeamTalkUser
 from .user_account import BannedUserAccount as TeamTalkBannedUserAccount
 from .user_account import UserAccount as TeamTalkUserAccount
 
-
 _log = logging.getLogger(__name__)
 
 
